@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>КПТ Дневник</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Mulish:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f7f4ef;--paper:#fdfbf7;--ink:#2c2416;--ink-soft:#6b5e4a;--ink-light:#b5a898;
+  --accent:#7a5c3e;--aw:#c4845a;--as:#e8d9ca;--shadow:rgba(44,36,22,0.09);
+  --green:#5a8a6a;--gs:#e8f2eb;--blue:#4a7a9a;--bs:#e0ecf5;--pu:#7a6ea0;--ps:#ede8f5;
+  --ny:#fff8d6;--nyb:#d4a800;--nb:#d6eeff;--nbb:#4a9de0;--ng:#d6f5e2;--ngb:#3aaa5a;--np:#ffd6f0;--npb:#d04090;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Mulish',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;font-weight:300;}
+.overlay{display:none;position:fixed;inset:0;background:rgba(44,36,22,0.52);z-index:500;backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:16px;}
+.overlay.open{display:flex;}
+.modal{background:var(--paper);border-radius:20px;padding:28px;width:100%;max-width:460px;box-shadow:0 20px 60px rgba(44,36,22,0.2);animation:scaleIn .25s ease;max-height:92vh;overflow-y:auto;}
+@keyframes scaleIn{from{transform:scale(.95);opacity:0}to{transform:scale(1);opacity:1}}
+.mtitle{font-family:'Cormorant Garamond',serif;font-size:24px;color:var(--accent);margin-bottom:5px;}
+.msub{font-size:13px;color:var(--ink-light);margin-bottom:18px;line-height:1.6;}
+.mclose{float:right;background:none;border:none;font-size:20px;cursor:pointer;color:var(--ink-light);}
+label{display:block;font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-light);margin-bottom:5px;margin-top:14px;}
+label:first-of-type{margin-top:0;}
+input[type=text],textarea{width:100%;border:1.5px solid var(--as);border-radius:10px;padding:11px 14px;font-family:'Mulish',sans-serif;font-size:14px;font-weight:300;color:var(--ink);background:var(--bg);outline:none;transition:border .2s,box-shadow .2s;resize:none;}
+input[type=text]:focus,textarea:focus{border-color:var(--aw);box-shadow:0 0 0 3px rgba(196,132,90,.12);}
+input::placeholder,textarea::placeholder{color:var(--ink-light);}
+.btn{font-family:'Mulish',sans-serif;font-size:14px;font-weight:500;padding:11px 20px;border-radius:10px;cursor:pointer;transition:all .2s;border:none;}
+.bp{background:var(--accent);color:#fff;box-shadow:0 4px 14px rgba(122,92,62,.22);}
+.bp:hover{background:var(--aw);}
+.bs{background:none;border:1.5px solid var(--as);color:var(--ink-soft);}
+.bs:hover{background:var(--as);}
+.brow{display:flex;gap:10px;margin-top:18px;}
+.brow .btn{flex:1;}
+
+/* HEADER */
+.header{background:var(--paper);border-bottom:1px solid var(--as);padding:13px 18px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;gap:10px;}
+.htitle{font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--accent);}
+.htitle em{font-style:italic;color:var(--aw);}
+.mbadge{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 10px;border-radius:20px;}
+.mb-o{background:var(--as);color:var(--accent);}
+.mb-v{background:var(--nb);color:#2a6090;}
+.hbtn{font-family:'Mulish',sans-serif;font-size:12px;font-weight:500;color:var(--ink-soft);background:none;border:1px solid var(--as);padding:6px 12px;border-radius:20px;cursor:pointer;transition:all .2s;white-space:nowrap;}
+.hbtn:hover{background:var(--as);color:var(--accent);}
+
+/* TABS */
+.tabs{background:var(--paper);border-bottom:1px solid var(--as);display:flex;padding:0 18px;}
+.tab{font-size:13px;font-weight:500;color:var(--ink-light);padding:10px 14px;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;}
+.tab.active{color:var(--aw);border-bottom-color:var(--aw);}
+
+.main{max-width:680px;margin:0 auto;padding:24px 16px 80px;}
+.view{display:none;}
+.view.active{display:block;}
+
+/* JOURNAL */
+.jtop{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;gap:10px;flex-wrap:wrap;}
+.jhead{font-family:'Cormorant Garamond',serif;font-size:24px;color:var(--ink);}
+.dnav{display:flex;align-items:center;gap:7px;}
+.dnbtn{background:none;border:1px solid var(--as);border-radius:8px;padding:5px 10px;cursor:pointer;font-size:13px;color:var(--ink-soft);transition:all .15s;}
+.dnbtn:hover{background:var(--as);}
+.dlbl{font-size:13px;color:var(--ink-soft);min-width:110px;text-align:center;font-weight:600;}
+.empty{text-align:center;padding:60px 20px;color:var(--ink-light);font-size:14px;line-height:1.9;}
+.empty-big{font-family:'Cormorant Garamond',serif;font-size:36px;color:var(--as);display:block;margin-bottom:8px;}
+
+/* ENTRY CARDS */
+.ecard{background:var(--paper);border-radius:14px;border:1px solid var(--as);border-left:4px solid transparent;margin-bottom:10px;overflow:hidden;transition:box-shadow .2s;}
+.ecard:hover{box-shadow:0 4px 20px var(--shadow);}
+.ecard.lc-yellow{border-left-color:var(--nyb);}
+.ecard.lc-blue{border-left-color:var(--nbb);}
+.ecard.lc-green{border-left-color:var(--ngb);}
+.ecard.lc-pink{border-left-color:var(--npb);}
+.ehead{padding:14px 16px;cursor:pointer;display:flex;align-items:flex-start;gap:10px;}
+.etime{font-size:11px;font-weight:700;color:var(--ink-light);letter-spacing:.06em;margin-top:2px;flex-shrink:0;width:38px;}
+.epreview{flex:1;min-width:0;}
+.esit-text{font-size:14px;color:var(--ink);line-height:1.5;margin-bottom:6px;}
+.etags{display:flex;flex-wrap:wrap;gap:4px;}
+.etag{font-size:11px;padding:2px 8px;border-radius:12px;background:var(--as);color:var(--accent);font-weight:500;}
+.etag.fear{background:#ede8f5;color:#6a5a90;}
+.etag.sad{background:#e0ecf5;color:#3a6080;}
+.etag.ang{background:#f5e0e0;color:#804040;}
+.etag.pos{background:#e0f5e8;color:#406050;}
+.etag.other{background:#f0f0e8;color:#5a5a40;}
+.echev{font-size:13px;color:var(--ink-light);flex-shrink:0;transition:transform .25s;margin-top:2px;}
+.ecard.open .echev{transform:rotate(180deg);}
+.ndot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px;}
+.ebody{display:none;padding:0 16px 16px;border-top:1px solid var(--as);animation:fi .2s ease;}
+.ecard.open .ebody{display:block;}
+@keyframes fi{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.esec{margin-top:13px;}
+.eslbl{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-light);margin-bottom:4px;}
+.esval{font-size:14px;color:var(--ink);line-height:1.7;background:var(--bg);padding:9px 12px;border-radius:8px;}
+.esval-g{font-size:14px;color:var(--ink);line-height:1.7;background:var(--gs);padding:9px 12px;border-radius:8px;border-left:3px solid var(--green);}
+.esval-p{font-size:14px;color:var(--ink);line-height:1.7;background:var(--ps);padding:9px 12px;border-radius:8px;border-left:3px solid var(--pu);}
+.etagrow{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px;}
+
+/* EMO+INTENSITY in journal */
+.emo-with-int{display:inline-flex;align-items:center;gap:4px;background:var(--as);border-radius:12px;padding:2px 4px 2px 8px;margin:3px 3px 3px 0;}
+.emo-with-int .ename{font-size:11px;color:var(--accent);font-weight:500;}
+.emo-with-int .eint{font-size:10px;background:var(--aw);color:#fff;border-radius:8px;padding:1px 6px;font-weight:700;}
+.emo-with-int.fear{background:#ede8f5;}
+.emo-with-int.fear .ename{color:#6a5a90;}
+.emo-with-int.fear .eint{background:#7a6ea0;}
+.emo-with-int.sad{background:#e0ecf5;}
+.emo-with-int.sad .ename{color:#3a6080;}
+.emo-with-int.sad .eint{background:#4a7a9a;}
+.emo-with-int.ang{background:#f5e0e0;}
+.emo-with-int.ang .ename{color:#804040;}
+.emo-with-int.ang .eint{background:#9a4a4a;}
+.emo-with-int.pos{background:#e0f5e8;}
+.emo-with-int.pos .ename{color:#406050;}
+.emo-with-int.pos .eint{background:#4a8a6a;}
+
+/* ENTRY ACTIONS */
+.eacts{display:flex;gap:8px;margin-top:13px;padding-top:12px;border-top:1px solid var(--as);flex-wrap:wrap;}
+.abtn{font-size:12px;font-weight:500;padding:6px 13px;border-radius:20px;cursor:pointer;border:1px solid var(--as);background:none;color:var(--ink-soft);font-family:'Mulish',sans-serif;transition:all .18s;}
+.abtn:hover{background:var(--as);color:var(--accent);}
+.abtn.del{color:#a05050;border-color:#f0d8d8;}
+.abtn.del:hover{background:#f5e8e8;}
+
+/* NOTES */
+.nsec{margin-top:13px;padding-top:12px;border-top:1px dashed var(--as);}
+.nhead{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-light);margin-bottom:9px;}
+.nitem{border-radius:10px;padding:10px 12px;margin-bottom:7px;font-size:13px;line-height:1.6;position:relative;padding-right:28px;}
+.nitem.yellow{background:var(--ny);border:1px solid var(--nyb);}
+.nitem.blue{background:var(--nb);border:1px solid var(--nbb);}
+.nitem.green{background:var(--ng);border:1px solid var(--ngb);}
+.nitem.pink{background:var(--np);border:1px solid var(--npb);}
+.nauthor{font-size:10px;font-weight:700;opacity:.6;margin-bottom:3px;text-transform:uppercase;letter-spacing:.05em;}
+.ndel{position:absolute;top:7px;right:8px;background:none;border:none;cursor:pointer;font-size:14px;opacity:.35;transition:opacity .15s;}
+.ndel:hover{opacity:.8;}
+.addnote{margin-top:10px;}
+.crow{display:flex;gap:7px;margin-bottom:8px;}
+.cdot{width:22px;height:22px;border-radius:50%;cursor:pointer;border:2.5px solid transparent;transition:transform .15s,border-color .15s;}
+.cdot.sel{border-color:var(--ink);transform:scale(1.15);}
+.cdot.cy{background:var(--nyb);}
+.cdot.cb{background:var(--nbb);}
+.cdot.cg{background:var(--ngb);}
+.cdot.cp{background:var(--npb);}
+.nta{width:100%;border:1.5px solid var(--as);border-radius:8px;padding:8px 11px;font-family:'Mulish',sans-serif;font-size:13px;color:var(--ink);background:var(--bg);resize:none;outline:none;transition:border .2s;}
+.nta:focus{border-color:var(--aw);}
+.nsbmt{margin-top:7px;font-family:'Mulish',sans-serif;font-size:12px;font-weight:600;padding:7px 16px;background:var(--accent);color:#fff;border:none;border-radius:20px;cursor:pointer;}
+.nsbmt:hover{background:var(--aw);}
+
+/* WRITE */
+.pwrap{display:flex;gap:4px;margin-bottom:24px;align-items:center;}
+.ps{flex:1;height:3px;background:var(--as);border-radius:2px;transition:background .4s;}
+.ps.active{background:var(--aw);}
+.ps.done{background:var(--accent);}
+.pslbl{font-size:11px;color:var(--ink-light);letter-spacing:.06em;text-transform:uppercase;margin-left:6px;white-space:nowrap;}
+.card{background:var(--paper);border-radius:16px;padding:24px;box-shadow:0 4px 24px var(--shadow);display:none;animation:si .3s ease;}
+.card.vis{display:block;}
+@keyframes si{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.sbadge{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--aw);margin-bottom:9px;}
+.sdot{width:5px;height:5px;background:var(--aw);border-radius:50%;}
+.ctitle{font-family:'Cormorant Garamond',serif;font-size:23px;color:var(--ink);margin-bottom:5px;line-height:1.2;}
+.chint{font-size:13px;color:var(--ink-light);margin-bottom:16px;line-height:1.6;}
+
+/* EMOTION CHIPS */
+.eca-title{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-light);margin-bottom:7px;margin-top:14px;}
+.egrid{display:flex;flex-wrap:wrap;gap:6px;}
+.echip{padding:6px 12px;border-radius:20px;font-size:13px;cursor:pointer;border:1.5px solid var(--as);background:var(--bg);color:var(--ink-soft);transition:all .15s;user-select:none;}
+.echip:hover{border-color:var(--aw);color:var(--accent);}
+.echip.sel{background:var(--aw);color:#fff;border-color:var(--aw);}
+.echip.sel.fear{background:#7a6ea0;border-color:#7a6ea0;}
+.echip.sel.sad{background:#4a7a9a;border-color:#4a7a9a;}
+.echip.sel.ang{background:#9a4a4a;border-color:#9a4a4a;}
+.echip.sel.pos{background:#4a8a6a;border-color:#4a8a6a;}
+.echip.sel.other{background:#6a6a50;border-color:#6a6a50;}
+
+/* INDIVIDUAL INTENSITY */
+.emo-int-list{margin-top:14px;display:flex;flex-direction:column;gap:12px;}
+.emo-int-item{background:var(--bg);border-radius:10px;padding:11px 13px;}
+.emo-int-name{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:8px;}
+.int10-grid{display:flex;gap:5px;}
+.i10{flex:1;aspect-ratio:1;border-radius:7px;border:1.5px solid var(--as);background:var(--paper);cursor:pointer;font-size:12px;font-weight:600;color:var(--ink-soft);transition:all .15s;display:flex;align-items:center;justify-content:center;font-family:'Mulish',sans-serif;}
+.i10:hover{border-color:var(--aw);color:var(--accent);}
+.i10.s1,.i10.s2,.i10.s3{background:#4a8a6a;border-color:#4a8a6a;color:#fff;}
+.i10.s4,.i10.s5,.i10.s6{background:var(--aw);border-color:var(--aw);color:#fff;}
+.i10.s7,.i10.s8{background:#a05050;border-color:#a05050;color:#fff;}
+.i10.s9,.i10.s10{background:#7a2020;border-color:#7a2020;color:#fff;}
+
+/* NEEDS */
+.need-chip{padding:6px 12px;border-radius:20px;font-size:12px;cursor:pointer;border:1.5px solid var(--as);background:var(--bg);color:var(--ink-soft);transition:all .15s;user-select:none;display:inline-block;line-height:1.4;}
+.need-chip:hover{border-color:var(--aw);color:var(--accent);}
+.need-chip.sel{background:var(--aw);color:#fff;border-color:var(--aw);}
+.need-chip.long{font-size:11px;}
+
+/* DISTORTIONS */
+.ditem{padding:10px 13px;border-radius:9px;border:1.5px solid var(--as);margin-bottom:6px;cursor:pointer;display:flex;align-items:flex-start;gap:10px;transition:all .15s;}
+.ditem:hover{border-color:var(--aw);background:#fff9f5;}
+.ditem.sel{border-color:var(--aw);background:#fff9f5;}
+.dchk{width:16px;height:16px;border:2px solid var(--as);border-radius:4px;flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;transition:all .15s;}
+.ditem.sel .dchk{background:var(--aw);border-color:var(--aw);}
+.dname{font-size:13px;font-weight:500;color:var(--ink);margin-bottom:2px;}
+.ddesc{font-size:12px;color:var(--ink-light);line-height:1.5;}
+
+/* NAV */
+.nrow{display:flex;gap:10px;margin-top:20px;}
+.bbk{padding:10px 16px;border:1.5px solid var(--as);border-radius:10px;background:none;color:var(--ink-soft);font-family:'Mulish',sans-serif;font-size:14px;cursor:pointer;transition:all .15s;}
+.bbk:hover{background:var(--as);}
+.bnxt{flex:1;padding:12px 20px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-family:'Mulish',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all .2s;box-shadow:0 4px 16px rgba(122,92,62,.22);}
+.bnxt:hover{background:var(--aw);transform:translateY(-1px);}
+
+/* TIPS */
+.tip{margin-top:13px;padding:11px 14px;border-radius:9px;font-size:13px;line-height:1.6;border-left:3px solid var(--aw);background:#fff9f5;color:var(--ink-soft);}
+.tipg{border-color:var(--green);background:var(--gs);color:#3a6a4a;}
+.tipb{border-color:var(--blue);background:var(--bs);color:#2a5070;}
+.tipp{border-color:var(--pu);background:var(--ps);color:#4a3a70;}
+
+/* DONE */
+.done-icon{font-size:44px;text-align:center;margin-bottom:12px;}
+.done-msg{font-family:'Cormorant Garamond',serif;font-size:26px;text-align:center;color:var(--accent);margin-bottom:6px;}
+.done-sub{font-size:14px;color:var(--ink-light);text-align:center;margin-bottom:22px;line-height:1.6;}
+.ds-lbl{font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-light);margin-bottom:4px;margin-top:12px;}
+.ds-val{font-size:14px;color:var(--ink);background:var(--bg);padding:9px 12px;border-radius:8px;line-height:1.6;}
+.ds-val.g{background:var(--gs);}
+.ds-val.p{background:var(--ps);}
+.ds-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px;}
+.bnew{display:block;width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-family:'Mulish',sans-serif;font-size:14px;font-weight:500;cursor:pointer;text-align:center;transition:all .2s;box-shadow:0 4px 16px rgba(122,92,62,.22);margin-top:6px;}
+.bnew:hover{background:var(--aw);}
+
+/* SHARE */
+.slink{background:var(--bg);border:1.5px solid var(--as);border-radius:10px;padding:12px 14px;font-size:15px;font-weight:700;color:var(--accent);margin:10px 0;cursor:pointer;transition:background .15s;letter-spacing:.12em;text-align:center;display:block;}
+.slink:hover{background:var(--as);}
+.copied{font-size:12px;color:var(--green);margin-top:4px;display:none;}
+.copied.show{display:block;}
+
+.spinner{display:inline-block;width:22px;height:22px;border:2px solid var(--as);border-top-color:var(--aw);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:500px){.card{padding:18px 14px;}.ctitle{font-size:20px;}.main{padding:16px 12px 60px;}.header{padding:11px 13px;}}
+</style>
+</head>
+<body>
+
+<!-- SETUP -->
+<div class="overlay open" id="mSetup">
+<div class="modal">
+  <div class="mtitle">КПТ <em style="font-style:italic;color:var(--aw)">дневник</em></div>
+  <div class="msub">Как вы хотите войти?</div>
+  <div style="display:flex;flex-direction:column;gap:9px;">
+    <button class="btn bp" style="padding:13px;" onclick="enterOwner()">📓 Я веду дневник</button>
+    <button class="btn bs" style="padding:13px;" onclick="showVI()">💬 Я психолог — у меня есть код</button>
+  </div>
+  <div id="vi" style="display:none;margin-top:16px;">
+    <label>Код дневника</label>
+    <input type="text" id="vCode" placeholder="Введите код" style="text-transform:uppercase;letter-spacing:.1em;">
+    <div id="verr" style="font-size:12px;color:#c04040;margin-top:5px;display:none;">Проверьте код и попробуйте снова</div>
+    <button class="btn bp" style="width:100%;padding:11px;margin-top:11px;" onclick="enterViewer()">Открыть дневник →</button>
+  </div>
+</div>
+</div>
+
+<!-- SHARE -->
+<div class="overlay" id="mShare">
+<div class="modal">
+  <button class="mclose" onclick="cm('mShare')">✕</button>
+  <div class="mtitle">Поделиться с психологом</div>
+  <div class="msub">Отправьте этот код психологу. Он открывает файл, выбирает «Я психолог», вводит код — и видит все ваши записи и может оставлять комментарии.</div>
+  <label>Ваш код</label>
+  <div class="slink" onclick="copyCode()" id="sCode">—</div>
+  <div class="copied" id="sCopied">✓ Скопировано!</div>
+  <p style="font-size:12px;color:var(--ink-light);margin-top:5px;line-height:1.6;">Нажмите на код чтобы скопировать.</p>
+  <div class="brow"><button class="btn bs" onclick="cm('mShare')">Закрыть</button></div>
+</div>
+</div>
+
+<!-- EDIT -->
+<div class="overlay" id="mEdit">
+<div class="modal" style="max-width:560px;">
+  <button class="mclose" onclick="cm('mEdit')">✕</button>
+  <div class="mtitle">Редактировать</div>
+  <label>Ситуация</label><textarea id="eSit" rows="2"></textarea>
+  <label>Реакции тела и действия</label><textarea id="eBody" rows="2"></textarea>
+  <label>Мысли</label><textarea id="eTho" rows="2"></textarea>
+  <label>Потребности (текст)</label><textarea id="eNeed" rows="2"></textarea>
+  <label>Конструктивные мысли</label><textarea id="eCons" rows="2"></textarea>
+  <label>Поведение автора жизни</label><textarea id="eAuth" rows="2"></textarea>
+  <div class="brow"><button class="btn bs" onclick="cm('mEdit')">Отмена</button><button class="btn bp" onclick="saveEdit()">Сохранить</button></div>
+</div>
+</div>
+
+<!-- HEADER -->
+<header class="header">
+  <div style="display:flex;align-items:center;gap:9px;min-width:0;">
+    <div class="htitle">КПТ <em>дневник</em></div>
+    <div class="mbadge" id="mBadge"></div>
+  </div>
+  <div id="hRight"></div>
+</header>
+
+<!-- TABS -->
+<div class="tabs" id="tabsRow" style="display:none;">
+  <div class="tab active" id="t-journal" onclick="switchTab('journal')">Записи</div>
+  <div class="tab" id="t-write" onclick="switchTab('write')">+ Новая запись</div>
+</div>
+
+<div class="main">
+
+<!-- JOURNAL -->
+<div class="view active" id="v-journal">
+  <div class="jtop">
+    <div class="jhead" id="jHead">Дневник</div>
+    <div class="dnav">
+      <button class="dnbtn" onclick="shiftDay(-1)">‹</button>
+      <div class="dlbl" id="dLbl"></div>
+      <button class="dnbtn" onclick="shiftDay(1)">›</button>
+    </div>
+  </div>
+  <div id="jList"></div>
+</div>
+
+<!-- WRITE -->
+<div class="view" id="v-write">
+  <div class="pwrap">
+    <div class="ps active" id="ps1"></div><div class="ps" id="ps2"></div><div class="ps" id="ps3"></div>
+    <div class="ps" id="ps4"></div><div class="ps" id="ps5"></div><div class="ps" id="ps6"></div><div class="ps" id="ps7"></div>
+    <span class="pslbl" id="pLbl">1 / 7</span>
+  </div>
+
+  <!-- S1: СИТУАЦИЯ -->
+  <div class="card vis" id="s1">
+    <div class="sbadge"><div class="sdot"></div>Шаг 1 · Ситуация</div>
+    <h2 class="ctitle">Что произошло?</h2>
+    <p class="chint">Опишите как видеокамера — только факты, без оценок. Где? Когда? Что именно случилось?</p>
+    <textarea id="fSit" rows="4" placeholder="Например: сегодня утром руководитель сказал при коллегах, что отчёт оформлен неверно…"></textarea>
+    <div class="tip">📹 Камера фиксирует только то, что реально произошло — без домыслов и выводов.</div>
+    <div class="nrow"><button class="bnxt" onclick="gos(2)">Далее →</button></div>
+  </div>
+
+  <!-- S2: ЭМОЦИИ -->
+  <div class="card" id="s2">
+    <div class="sbadge"><div class="sdot"></div>Шаг 2 · Эмоции и чувства</div>
+    <h2 class="ctitle">Что вы почувствовали?</h2>
+    <p class="chint">Выберите эмоции — после этого укажете накал каждой от 1 до 10.</p>
+
+    <div class="eca-title">😰 Тревога и страх</div>
+    <div class="egrid">
+      <div class="echip fear" onclick="tE(this)">Тревога</div><div class="echip fear" onclick="tE(this)">Страх</div>
+      <div class="echip fear" onclick="tE(this)">Паника</div><div class="echip fear" onclick="tE(this)">Беспокойство</div>
+      <div class="echip fear" onclick="tE(this)">Нервозность</div><div class="echip fear" onclick="tE(this)">Напряжение</div>
+      <div class="echip fear" onclick="tE(this)">Растерянность</div><div class="echip fear" onclick="tE(this)">Стыд</div>
+      <div class="echip fear" onclick="tE(this)">Ужас</div><div class="echip fear" onclick="tE(this)">Неловкость</div>
+    </div>
+
+    <div class="eca-title">😔 Грусть и уныние</div>
+    <div class="egrid">
+      <div class="echip sad" onclick="tE(this)">Грусть</div><div class="echip sad" onclick="tE(this)">Тоска</div>
+      <div class="echip sad" onclick="tE(this)">Обида</div><div class="echip sad" onclick="tE(this)">Разочарование</div>
+      <div class="echip sad" onclick="tE(this)">Вина</div><div class="echip sad" onclick="tE(this)">Одиночество</div>
+      <div class="echip sad" onclick="tE(this)">Беспомощность</div><div class="echip sad" onclick="tE(this)">Усталость</div>
+      <div class="echip sad" onclick="tE(this)">Ностальгия</div><div class="echip sad" onclick="tE(this)">Скука</div>
+    </div>
+
+    <div class="eca-title">😡 Злость и раздражение</div>
+    <div class="egrid">
+      <div class="echip ang" onclick="tE(this)">Злость</div><div class="echip ang" onclick="tE(this)">Раздражение</div>
+      <div class="echip ang" onclick="tE(this)">Гнев</div><div class="echip ang" onclick="tE(this)">Зависть</div>
+      <div class="echip ang" onclick="tE(this)">Отвращение</div><div class="echip ang" onclick="tE(this)">Ревность</div>
+      <div class="echip ang" onclick="tE(this)">Замешательство</div>
+    </div>
+
+    <div class="eca-title">🌿 Позитивные</div>
+    <div class="egrid">
+      <div class="echip pos" onclick="tE(this)">Радость</div><div class="echip pos" onclick="tE(this)">Облегчение</div>
+      <div class="echip pos" onclick="tE(this)">Благодарность</div><div class="echip pos" onclick="tE(this)">Гордость</div>
+      <div class="echip pos" onclick="tE(this)">Спокойствие</div><div class="echip pos" onclick="tE(this)">Любопытство</div>
+      <div class="echip pos" onclick="tE(this)">Надежда</div><div class="echip pos" onclick="tE(this)">Уверенность</div>
+      <div class="echip pos" onclick="tE(this)">Удовлетворение</div><div class="echip pos" onclick="tE(this)">Веселье</div>
+      <div class="echip pos" onclick="tE(this)">Облегчение</div><div class="echip pos" onclick="tE(this)">Романтика</div>
+    </div>
+
+    <div class="eca-title">✨ Другие чувства</div>
+    <div class="egrid">
+      <div class="echip other" onclick="tE(this)">Восхищение</div><div class="echip other" onclick="tE(this)">Обожание</div>
+      <div class="echip other" onclick="tE(this)">Эстетическое наслаждение</div>
+      <div class="echip other" onclick="tE(this)">Благоговение</div><div class="echip other" onclick="tE(this)">Влечение</div>
+      <div class="echip other" onclick="tE(this)">Эмпатическая боль</div>
+      <div class="echip other" onclick="tE(this)">Очарование</div><div class="echip other" onclick="tE(this)">Удивление</div>
+      <div class="echip other" onclick="tE(this)">Возбуждение</div><div class="echip other" onclick="tE(this)">Интерес</div>
+      <div class="echip other" onclick="tE(this)">Сексуальное желание</div>
+      <div class="echip other" onclick="tE(this)">Спокойствие</div>
+    </div>
+
+    <!-- INDIVIDUAL INTENSITY -->
+    <div class="emo-int-list" id="eIntList" style="display:none;"></div>
+
+    <div class="nrow">
+      <button class="bbk" onclick="gos(1)">←</button>
+      <button class="bnxt" onclick="gos(3)">Далее →</button>
+    </div>
+  </div>
+
+  <!-- S3: МЫСЛИ -->
+  <div class="card" id="s3">
+    <div class="sbadge"><div class="sdot"></div>Шаг 3 · Мысли и убеждения</div>
+    <h2 class="ctitle">Что пронеслось в голове?</h2>
+    <p class="chint">Запишите автоматические мысли — те, что появились мгновенно. Отметьте искажения если узнаёте.</p>
+    <textarea id="fTho" rows="4" placeholder="«Я всегда всё делаю неправильно», «Меня не уважают»…"></textarea>
+    <div class="tip">💡 Мысли часто начинаются: «Я всегда/никогда…», «Они думают…», «Это ужасно…», «Я должна…»</div>
+    <div style="margin-top:16px;">
+      <div style="font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-light);margin-bottom:8px;">Когнитивные искажения</div>
+      <div id="dList"></div>
+    </div>
+    <div class="nrow"><button class="bbk" onclick="gos(2)">←</button><button class="bnxt" onclick="gos(4)">Далее →</button></div>
+  </div>
+
+  <!-- S4: ТЕЛО -->
+  <div class="card" id="s4">
+    <div class="sbadge"><div class="sdot"></div>Шаг 4 · Реакции тела и действия</div>
+    <h2 class="ctitle">Что было в теле? Что сделали?</h2>
+    <p class="chint">Как отреагировало тело? Что вы сделали или не сделали в этот момент?</p>
+    <textarea id="fBody" rows="4" placeholder="Тело: сжалось горло, сердцебиение, напряжение…&#10;Действия: промолчала, ушла, начала оправдываться…"></textarea>
+    <div class="tip tipb">🫁 Тело реагирует на эмоции раньше, чем мы их осознаём. Зажатость, тяжесть, жар — всё важно.</div>
+    <div class="nrow"><button class="bbk" onclick="gos(3)">←</button><button class="bnxt" onclick="gos(5)">Далее →</button></div>
+  </div>
+
+  <!-- S5: ПОТРЕБНОСТИ -->
+  <div class="card" id="s5">
+    <div class="sbadge"><div class="sdot"></div>Шаг 5 · Потребности</div>
+    <h2 class="ctitle">Что вам было нужно?</h2>
+    <p class="chint">За каждой сильной эмоцией стоит неудовлетворённая потребность.</p>
+
+    <div class="eca-title">🏃 Физиологические</div>
+    <div class="egrid">
+      <div class="need-chip" onclick="tN(this)">Пища и вода</div>
+      <div class="need-chip" onclick="tN(this)">Сон и отдых</div>
+      <div class="need-chip" onclick="tN(this)">Тепло и защита</div>
+      <div class="need-chip" onclick="tN(this)">Физическая активность</div>
+      <div class="need-chip" onclick="tN(this)">Здоровье и безопасность</div>
+      <div class="need-chip" onclick="tN(this)">Сексуальность</div>
+    </div>
+
+    <div class="eca-title">💛 Эмоциональные</div>
+    <div class="egrid">
+      <div class="need-chip" onclick="tN(this)">Любовь и принятие</div>
+      <div class="need-chip" onclick="tN(this)">Забота</div>
+      <div class="need-chip" onclick="tN(this)">Уважение и признание</div>
+      <div class="need-chip" onclick="tN(this)">Самореализация</div>
+      <div class="need-chip" onclick="tN(this)">Самоутверждение</div>
+      <div class="need-chip" onclick="tN(this)">Саморазвитие</div>
+      <div class="need-chip" onclick="tN(this)">Спонтанность и игра</div>
+      <div class="need-chip" onclick="tN(this)">Расслабление</div>
+      <div class="need-chip" onclick="tN(this)">Творчество</div>
+      <div class="need-chip long" onclick="tN(this)">Саморегуляция и самоконтроль</div>
+      <div class="need-chip long" onclick="tN(this)">Свободное выражение эмоций</div>
+      <div class="need-chip" onclick="tN(this)">Валидация</div>
+      <div class="need-chip" onclick="tN(this)">Эмпатия</div>
+      <div class="need-chip" onclick="tN(this)">Автономия</div>
+      <div class="need-chip" onclick="tN(this)">Компетентность</div>
+      <div class="need-chip long" onclick="tN(this)">Признание достижений</div>
+      <div class="need-chip" onclick="tN(this)">Безопасность</div>
+      <div class="need-chip" onclick="tN(this)">Поддержка</div>
+      <div class="need-chip" onclick="tN(this)">Понимание</div>
+      <div class="need-chip" onclick="tN(this)">Справедливость</div>
+    </div>
+
+    <div class="eca-title">🤝 Социальные</div>
+    <div class="egrid">
+      <div class="need-chip" onclick="tN(this)">Общение</div>
+      <div class="need-chip" onclick="tN(this)">Принадлежность</div>
+      <div class="need-chip" onclick="tN(this)">Дружба</div>
+      <div class="need-chip" onclick="tN(this)">Взаимодействие</div>
+      <div class="need-chip long" onclick="tN(this)">Участие в жизни общества</div>
+      <div class="need-chip" onclick="tN(this)">Быть услышанной</div>
+      <div class="need-chip" onclick="tN(this)">Близость</div>
+      <div class="need-chip long" onclick="tN(this)">Здоровые границы</div>
+      <div class="need-chip long" onclick="tN(this)">Здоровая ответственность</div>
+      <div class="need-chip" onclick="tN(this)">Успешность</div>
+      <div class="need-chip" onclick="tN(this)">Честность</div>
+    </div>
+
+    <div style="margin-top:12px;">
+      <textarea id="fNeed" rows="2" placeholder="Или опишите своими словами…"></textarea>
+    </div>
+    <div class="tip">🔍 «Что я хотела получить, но не получила?» или «Чего мне не хватало?»</div>
+    <div class="nrow"><button class="bbk" onclick="gos(4)">←</button><button class="bnxt" onclick="gos(6)">Далее →</button></div>
+  </div>
+
+  <!-- S6: КОНСТРУКТИВНЫЕ МЫСЛИ -->
+  <div class="card" id="s6">
+    <div class="sbadge"><div class="sdot"></div>Шаг 6 · Конструктивные мысли</div>
+    <h2 class="ctitle">Как реально устроена ситуация?</h2>
+    <p class="chint">Честный и взвешенный взгляд на факты — без искажений в худшую или лучшую сторону.</p>
+    <textarea id="fCons" rows="4" placeholder="Например: «Руководитель указал на конкретную ошибку. Это не значит, что я плохой работник — я просто не знала этот формат»…"></textarea>
+    <div class="tip tipp">
+      <strong>Вопросы-помощники:</strong><br>
+      • Какие факты за и против моей автоматической мысли?<br>
+      • Если убрать эмоции — что реально произошло?<br>
+      • Это правда, что <em>всегда/никогда/все</em>? Или преувеличение?<br>
+      • Что бы я сказала подруге в такой ситуации?<br>
+      • Через год это будет так же важно?
+    </div>
+    <div class="nrow"><button class="bbk" onclick="gos(5)">←</button><button class="bnxt" onclick="gos(7)">Далее →</button></div>
+  </div>
+
+  <!-- S7: АВТОР ЖИЗНИ -->
+  <div class="card" id="s7">
+    <div class="sbadge"><div class="sdot"></div>Шаг 7 · Поведение автора жизни</div>
+    <h2 class="ctitle">Что вы сделали или решили сделать?</h2>
+    <p class="chint">«Автор жизни» — это вы, когда действуете осознанно, из своих ценностей, а не из страха или автопилота.</p>
+    <textarea id="fAuth" rows="4" placeholder="Например: «Спросила у руководителя, какой именно формат нужен. Договорилась переоформить к завтрашнему утру»…"></textarea>
+    <div class="tip tipg">
+      <strong>Автопилот vs Автор:</strong><br>
+      • Автопилот: промолчала из страха, ушла в обиду, оправдывалась<br>
+      • Автор: спросила уточнение, выразила чувство, попросила о помощи, поставила границу<br><br>
+      <strong>Вопросы:</strong><br>
+      • Что я могу сделать, чтобы позаботиться о своей потребности?<br>
+      • Что сделал бы человек, который любит себя и уважает других?
+    </div>
+    <div class="nrow"><button class="bbk" onclick="gos(6)">←</button><button class="bnxt" onclick="saveEntry()">Сохранить ✓</button></div>
+  </div>
+
+  <!-- DONE -->
+  <div class="card" id="sDone">
+    <div class="done-icon">🌿</div>
+    <div class="done-msg">Запись сохранена</div>
+    <p class="done-sub">Вы прошли все шаги. Это серьёзная работа.</p>
+    <div id="dSum"></div>
+    <button class="bnew" onclick="newEntry()">+ Новая запись</button>
+  </div>
+</div><!-- /v-write -->
+</div><!-- /main -->
+
+<script>
+const DISTS=[
+  {n:"Всё или ничего",d:"Чёрно-белое: либо идеально, либо провал"},
+  {n:"Катастрофизация",d:"«Это ужасно, всё пропало»"},
+  {n:"Чтение мыслей",d:"Уверенность что знаете, что думают другие"},
+  {n:"Предсказание будущего",d:"«Всё закончится плохо»"},
+  {n:"Долженствование",d:"«Я должна / Они должны» — без исключений"},
+  {n:"Обесценивание позитивного",d:"Хорошее «не считается»"},
+  {n:"Навешивание ярлыков",d:"«Я неудачница» вместо описания поступка"},
+  {n:"Персонализация",d:"Всё принимать на свой счёт"},
+  {n:"Сверхобобщение",d:"«Я всегда так», «Никогда не изменится»"},
+  {n:"Эмоциональное мышление",d:"«Чувствую себя виноватой — значит виновата»"},
+];
+
+let role=null,code=null,step=1;
+let selEmos=[],selNeeds=[],selDists=[],editId=null;
+let viewDate=new Date(),noteColorSel={};
+let _cache={entries:[]};
+
+// ОБЛАЧНОЕ ХРАНИЛИЩЕ — данные хранятся на сервере, не в браузере
+async function getData(){
+  try {
+    const r=await window.storage.get('diary_'+code);
+    return r?JSON.parse(r.value):{entries:[]};
+  } catch(e){ return _cache; }
+}
+async function setData(d){
+  _cache=d;
+  try { await window.storage.set('diary_'+code,JSON.stringify(d)); } catch(e){}
+}
+function getE(){return _cache.entries||[];}
+async function saveE(arr){
+  _cache.entries=arr;
+  await setData(_cache);
+}
+async function loadData(){
+  _cache=await getData();
+}
+
+async function enterOwner(){
+  // Код хранится в облаке — пробуем получить, иначе создаём новый
+  let c=null;
+  try{const r=await window.storage.get('owner_code');if(r)c=r.value;}catch(e){}
+  if(!c){c=Math.random().toString(36).substring(2,8).toUpperCase();try{await window.storage.set('owner_code',c);}catch(e){}}
+  code=c;role='owner';await init();
+}
+function showVI(){document.getElementById('vi').style.display='block';}
+async function enterViewer(){
+  const c=document.getElementById('vCode').value.trim().toUpperCase();
+  if(!c) return;
+  code=c;role='viewer';await init();
+}
+function cm(id){document.getElementById(id).classList.remove('open');}
+
+async function init(){
+  // Показываем загрузку
+  document.getElementById('mSetup').classList.remove('open');
+  document.getElementById('jList').innerHTML='<div class="empty"><div class="spinner"></div><br>Загружаем записи…</div>';
+
+  const b=document.getElementById('mBadge');
+  if(role==='owner'){b.textContent='Мой дневник';b.className='mbadge mb-o';}
+  else{b.textContent='Просмотр';b.className='mbadge mb-v';}
+  const hr=document.getElementById('hRight');
+  if(role==='owner') hr.innerHTML=`<button class="hbtn" onclick="openShare()">Поделиться</button>`;
+  else hr.innerHTML=`<span style="font-size:12px;color:var(--ink-light)">Код: <strong>${code}</strong></span>`;
+  document.getElementById('tabsRow').style.display='flex';
+  if(role==='viewer') document.getElementById('t-write').style.display='none';
+  document.getElementById('sCode').textContent=code;
+  buildDists();updateDLbl();
+
+  // Загружаем данные из облака
+  await loadData();
+  renderJ();
+}
+
+function openShare(){document.getElementById('mShare').classList.add('open');}
+function copyCode(){
+  if(navigator.clipboard){navigator.clipboard.writeText(code).then(showCopied);}
+  else{const e=document.createElement('textarea');e.value=code;document.body.appendChild(e);e.select();document.execCommand('copy');document.body.removeChild(e);showCopied();}
+}
+function showCopied(){const m=document.getElementById('sCopied');m.classList.add('show');setTimeout(()=>m.classList.remove('show'),2000);}
+
+function switchTab(t){
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+  document.getElementById('t-'+t).classList.add('active');
+  document.getElementById('v-'+t).classList.add('active');
+  if(t==='journal') renderJ();
+}
+
+function shiftDay(d){viewDate.setDate(viewDate.getDate()+d);updateDLbl();renderJ();}
+function updateDLbl(){
+  const today=new Date(),yest=new Date(today);yest.setDate(today.getDate()-1);
+  let lbl;
+  if(viewDate.toDateString()===today.toDateString()) lbl='Сегодня';
+  else if(viewDate.toDateString()===yest.toDateString()) lbl='Вчера';
+  else lbl=viewDate.toLocaleDateString('ru',{day:'numeric',month:'long'});
+  document.getElementById('dLbl').textContent=lbl;
+  document.getElementById('jHead').textContent=viewDate.toDateString()===today.toDateString()?'Дневник':lbl;
+}
+
+function renderJ(){
+  const entries=getE();
+  const ds=viewDate.toDateString();
+  const day=entries.filter(e=>new Date(e.id).toDateString()===ds);
+  const c=document.getElementById('jList');
+  if(!day.length){
+    c.innerHTML=`<div class="empty"><span class="empty-big">✦</span>${role==='owner'?'Записей за этот день нет.<br>Нажмите «+ Новая запись»':'Записей за этот день нет.'}</div>`;
+    return;
+  }
+  c.innerHTML=day.map(e=>buildCard(e)).join('');
+}
+
+function buildCard(e){
+  const time=new Date(e.id).toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});
+  const topNote=e.notes&&e.notes.length?e.notes[e.notes.length-1]:null;
+  const lc=topNote?`lc-${topNote.color}`:'';
+  const dotStyle=topNote?`background:${nch(topNote.color)}`:'background:transparent';
+
+  // preview tags (just names)
+  const previewTags=(e.emotions||[]).slice(0,4).map(em=>`<span class="etag ${em.cat||''}">${x(em.name)}</span>`).join('');
+
+  // full emotion display with individual intensity
+  let emoH='';
+  if(e.emotions&&e.emotions.length){
+    emoH=`<div class="esec"><div class="eslbl">Эмоции</div><div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;">`;
+    emoH+=(e.emotions).map(em=>{
+      const intBadge=em.intensity?`<span class="eint">${em.intensity}</span>`:'';
+      return `<div class="emo-with-int ${em.cat||''}"><span class="ename">${x(em.name)}</span>${intBadge}</div>`;
+    }).join('');
+    emoH+=`</div></div>`;
+  }
+
+  let body='';
+  if(e.situation) body+=sec('Ситуация',x(e.situation));
+  body+=emoH;
+  if(e.thoughts) body+=sec('Мысли и убеждения',x(e.thoughts));
+  if(e.distortions&&e.distortions.length) body+=`<div class="esec"><div class="eslbl">Искажения</div><div class="etagrow">${e.distortions.map(d=>`<span class="etag">${x(d)}</span>`).join('')}</div></div>`;
+  if(e.bodyReaction) body+=sec('Реакции тела и действия',x(e.bodyReaction));
+  if(e.needs&&e.needs.length) body+=`<div class="esec"><div class="eslbl">Потребности</div><div class="etagrow">${e.needs.map(n=>`<span class="etag">${x(n)}</span>`).join('')}${e.needsText?`<span class="etag">${x(e.needsText)}</span>`:''}</div></div>`;
+  else if(e.needsText) body+=sec('Потребности',x(e.needsText));
+  if(e.constructive) body+=`<div class="esec"><div class="eslbl">Конструктивные мысли</div><div class="esval-g">${x(e.constructive)}</div></div>`;
+  if(e.author) body+=`<div class="esec"><div class="eslbl">Поведение автора жизни</div><div class="esval-p">${x(e.author)}</div></div>`;
+
+  const notesH=buildNotesH(e);
+  let acts='';
+  if(role==='owner') acts=`<div class="eacts">
+    <button class="abtn" onclick="openEdit('${e.id}');event.stopPropagation()">✏️ Редактировать</button>
+    <button class="abtn del" onclick="delEntry('${e.id}');event.stopPropagation()">Удалить</button>
+  </div>`;
+
+  return `<div class="ecard ${lc}" id="ec-${e.id}">
+    <div class="ehead" onclick="togCard('${e.id}')">
+      <div class="etime">${time}</div>
+      <div class="epreview">
+        <div class="esit-text">${x(e.situation||'Без описания')}</div>
+        <div class="etags">${previewTags}</div>
+      </div>
+      <div class="ndot" style="${dotStyle}"></div>
+      <div class="echev">▾</div>
+    </div>
+    <div class="ebody">${body}${notesH}${acts}</div>
+  </div>`;
+}
+
+function sec(lbl,val){return `<div class="esec"><div class="eslbl">${lbl}</div><div class="esval">${val}</div></div>`;}
+function nch(c){return{yellow:'#d4a800',blue:'#4a9de0',green:'#3aaa5a',pink:'#d04090'}[c]||'transparent';}
+function x(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');}
+function togCard(id){document.getElementById('ec-'+id).classList.toggle('open');}
+
+function buildNotesH(e){
+  const notes=e.notes||[];
+  let h=`<div class="nsec">`;
+  if(notes.length){
+    h+=`<div class="nhead">Комментарии психолога</div>`;
+    h+=notes.map((n,i)=>`<div class="nitem ${n.color}"><div class="nauthor">Психолог</div>${x(n.text)}${role==='viewer'?`<button class="ndel" onclick="delNote('${e.id}',${i});event.stopPropagation()">✕</button>`:''}</div>`).join('');
+  }
+  if(role==='viewer'){
+    h+=`<div class="addnote">
+      <div class="crow">
+        <div class="cdot cy sel" onclick="selC(this,'${e.id}','yellow')"></div>
+        <div class="cdot cb" onclick="selC(this,'${e.id}','blue')"></div>
+        <div class="cdot cg" onclick="selC(this,'${e.id}','green')"></div>
+        <div class="cdot cp" onclick="selC(this,'${e.id}','pink')"></div>
+      </div>
+      <textarea class="nta" id="nt-${e.id}" rows="2" placeholder="Добавить комментарий…"></textarea>
+      <button class="nsbmt" onclick="addNote('${e.id}');event.stopPropagation()">Добавить</button>
+    </div>`;
+  }
+  return h+`</div>`;
+}
+
+function selC(dot,eid,color){
+  noteColorSel[eid]=color;
+  const card=document.getElementById('ec-'+eid);
+  if(card) card.querySelectorAll('.cdot').forEach(d=>d.classList.remove('sel'));
+  dot.classList.add('sel');
+}
+async function addNote(eid){
+  const ta=document.getElementById('nt-'+eid);
+  const txt=ta?ta.value.trim():'';if(!txt) return;
+  const color=noteColorSel[eid]||'yellow';
+  const entries=getE();
+  const entry=entries.find(e=>String(e.id)===String(eid));
+  if(!entry) return;
+  if(!entry.notes) entry.notes=[];
+  entry.notes.push({text:txt,color,ts:Date.now()});
+  await saveE(entries);renderJ();
+  setTimeout(()=>{const c=document.getElementById('ec-'+eid);if(c)c.classList.add('open');},50);
+}
+async function delNote(eid,idx){
+  if(!confirm('Удалить комментарий?')) return;
+  const entries=getE();
+  const entry=entries.find(e=>String(e.id)===String(eid));
+  if(!entry||!entry.notes) return;
+  entry.notes.splice(idx,1);await saveE(entries);renderJ();
+  setTimeout(()=>{const c=document.getElementById('ec-'+eid);if(c)c.classList.add('open');},50);
+}
+async function delEntry(id){
+  if(!confirm('Удалить запись?')) return;
+  await saveE(getE().filter(e=>String(e.id)!==String(id)));renderJ();
+}
+function openEdit(id){
+  const entry=getE().find(e=>String(e.id)===String(id));
+  if(!entry) return;
+  editId=id;
+  document.getElementById('eSit').value=entry.situation||'';
+  document.getElementById('eBody').value=entry.bodyReaction||'';
+  document.getElementById('eTho').value=entry.thoughts||'';
+  document.getElementById('eNeed').value=entry.needsText||'';
+  document.getElementById('eCons').value=entry.constructive||'';
+  document.getElementById('eAuth').value=entry.author||'';
+  document.getElementById('mEdit').classList.add('open');
+}
+async function saveEdit(){
+  const entries=getE();
+  const entry=entries.find(e=>String(e.id)===String(editId));
+  if(!entry) return;
+  entry.situation=document.getElementById('eSit').value.trim();
+  entry.bodyReaction=document.getElementById('eBody').value.trim();
+  entry.thoughts=document.getElementById('eTho').value.trim();
+  entry.needsText=document.getElementById('eNeed').value.trim();
+  entry.constructive=document.getElementById('eCons').value.trim();
+  entry.author=document.getElementById('eAuth').value.trim();
+  await saveE(entries);cm('mEdit');renderJ();
+  setTimeout(()=>{const c=document.getElementById('ec-'+editId);if(c)c.classList.add('open');},50);
+}
+
+// WRITE LOGIC
+function buildDists(){
+  document.getElementById('dList').innerHTML=DISTS.map((d,i)=>
+    `<div class="ditem" id="di${i}" onclick="tD(${i})"><div class="dchk">✓</div>
+    <div><div class="dname">${d.n}</div><div class="ddesc">${d.d}</div></div></div>`).join('');
+}
+
+function tE(el){
+  el.classList.toggle('sel');
+  const name=el.textContent.trim();
+  const cat=Array.from(el.classList).find(c=>['fear','sad','ang','pos','other'].includes(c))||'other';
+  if(el.classList.contains('sel')){
+    if(!selEmos.find(e=>e.name===name)) selEmos.push({name,cat,intensity:null});
+  } else {
+    selEmos=selEmos.filter(e=>e.name!==name);
+  }
+  renderIntensityList();
+}
+
+function renderIntensityList(){
+  const container=document.getElementById('eIntList');
+  if(!selEmos.length){container.style.display='none';container.innerHTML='';return;}
+  container.style.display='flex';
+  container.innerHTML=`<div style="font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-light);margin-bottom:4px;">Накал каждой эмоции (1–10)</div>`+
+  selEmos.map((em,idx)=>{
+    const btns=[1,2,3,4,5,6,7,8,9,10].map(n=>{
+      const selClass=em.intensity===n?`s${n}`:'';
+      return `<div class="i10 ${selClass}" id="ib-${idx}-${n}" onclick="setInt(${idx},${n})">${n}</div>`;
+    }).join('');
+    return `<div class="emo-int-item">
+      <div class="emo-int-name">${x(em.name)}</div>
+      <div class="int10-grid">${btns}</div>
+    </div>`;
+  }).join('');
+}
+
+function setInt(idx,n){
+  if(selEmos[idx]) selEmos[idx].intensity=n;
+  // update buttons for this emotion only
+  for(let i=1;i<=10;i++){
+    const b=document.getElementById(`ib-${idx}-${i}`);
+    if(b){b.className='i10';if(i<=n)b.classList.add(`s${n}`);}
+  }
+}
+
+function tN(el){
+  el.classList.toggle('sel');
+  const name=el.textContent.trim();
+  if(el.classList.contains('sel')){if(!selNeeds.includes(name))selNeeds.push(name);}
+  else selNeeds=selNeeds.filter(n=>n!==name);
+}
+function tD(i){
+  const item=document.getElementById('di'+i);item.classList.toggle('sel');
+  const name=DISTS[i].n;
+  if(item.classList.contains('sel')){if(!selDists.includes(name))selDists.push(name);}
+  else selDists=selDists.filter(d=>d!==name);
+}
+
+function gos(n){
+  if(n===2&&!document.getElementById('fSit').value.trim()){
+    document.getElementById('fSit').focus();document.getElementById('fSit').style.borderColor='var(--aw)';return;
+  }
+  document.getElementById('s'+step).classList.remove('vis');
+  step=n;
+  const el=document.getElementById('s'+step)||document.getElementById('sDone');
+  el.classList.add('vis');
+  upProg();window.scrollTo({top:0,behavior:'smooth'});
+}
+function upProg(){
+  for(let i=1;i<=7;i++){
+    const e=document.getElementById('ps'+i);if(!e)continue;
+    e.className='ps';
+    if(i<step)e.classList.add('done');
+    else if(i===step)e.classList.add('active');
+  }
+  document.getElementById('pLbl').textContent=`${step} / 7`;
+}
+
+async function saveEntry(){
+  const entry={
+    id:Date.now(),
+    situation:document.getElementById('fSit').value.trim(),
+    emotions:[...selEmos],
+    thoughts:document.getElementById('fTho').value.trim(),
+    distortions:[...selDists],
+    bodyReaction:document.getElementById('fBody').value.trim(),
+    needs:[...selNeeds],
+    needsText:document.getElementById('fNeed').value.trim(),
+    constructive:document.getElementById('fCons').value.trim(),
+    author:document.getElementById('fAuth').value.trim(),
+    notes:[],
+  };
+  const arr=getE();arr.unshift(entry);await saveE(arr);
+
+  for(let i=1;i<=7;i++){const e=document.getElementById('s'+i);if(e)e.classList.remove('vis');}
+  document.getElementById('sDone').classList.add('vis');
+  document.getElementById('pLbl').textContent='Готово ✓';
+  for(let i=1;i<=7;i++){const e=document.getElementById('ps'+i);if(e)e.className='ps done';}
+
+  document.getElementById('dSum').innerHTML=`
+    ${entry.situation?`<div class="ds-lbl">Ситуация</div><div class="ds-val">${x(entry.situation)}</div>`:''}
+    ${entry.emotions.length?`<div class="ds-lbl">Эмоции</div><div class="ds-tags">${entry.emotions.map(e=>`<div class="emo-with-int ${e.cat}"><span class="ename">${e.name}</span>${e.intensity?`<span class="eint">${e.intensity}</span>`:''}</div>`).join('')}</div>`:''}
+    ${entry.constructive?`<div class="ds-lbl">Конструктивные мысли</div><div class="ds-val g">${x(entry.constructive)}</div>`:''}
+    ${entry.author?`<div class="ds-lbl">Поведение автора</div><div class="ds-val p">${x(entry.author)}</div>`:''}
+  `;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function newEntry(){
+  ['fSit','fTho','fBody','fNeed','fCons','fAuth'].forEach(id=>document.getElementById(id).value='');
+  selEmos=[];selNeeds=[];selDists=[];
+  document.querySelectorAll('.echip,.need-chip').forEach(c=>c.classList.remove('sel'));
+  document.querySelectorAll('.ditem').forEach(d=>d.classList.remove('sel'));
+  document.getElementById('eIntList').style.display='none';
+  document.getElementById('eIntList').innerHTML='';
+  document.getElementById('sDone').classList.remove('vis');
+  step=1;document.getElementById('s1').classList.add('vis');upProg();
+  switchTab('write');
+}
+</script>
+</body>
+</html>
