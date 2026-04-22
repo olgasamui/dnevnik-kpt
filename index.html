@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>КПТ Дневник</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Mulish:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{
   --bg:#f7f4ef;--paper:#fdfbf7;--ink:#2c2416;--ink-soft:#6b5e4a;--ink-light:#b5a898;
@@ -226,8 +227,6 @@ input::placeholder,textarea::placeholder{color:var(--ink-light);}
 .copied{font-size:12px;color:var(--green);margin-top:4px;display:none;}
 .copied.show{display:block;}
 
-.spinner{display:inline-block;width:22px;height:22px;border:2px solid var(--as);border-top-color:var(--aw);border-radius:50%;animation:spin .7s linear infinite;}
-@keyframes spin{to{transform:rotate(360deg)}}
 @media(max-width:500px){.card{padding:18px 14px;}.ctitle{font-size:20px;}.main{padding:16px 12px 60px;}.header{padding:11px 13px;}}
 </style>
 </head>
@@ -237,16 +236,28 @@ input::placeholder,textarea::placeholder{color:var(--ink-light);}
 <div class="overlay open" id="mSetup">
 <div class="modal">
   <div class="mtitle">КПТ <em style="font-style:italic;color:var(--aw)">дневник</em></div>
-  <div class="msub">Как вы хотите войти?</div>
-  <div style="display:flex;flex-direction:column;gap:9px;">
-    <button class="btn bp" style="padding:13px;" onclick="enterOwner()">📓 Я веду дневник</button>
-    <button class="btn bs" style="padding:13px;" onclick="showVI()">💬 Я психолог — у меня есть код</button>
+  <div class="msub" id="mSetupSub">Войдите или создайте аккаунт. Ваши записи хранятся в облаке и доступны с любого устройства.</div>
+
+  <!-- Форма входа/регистрации -->
+  <div id="authForm">
+    <label>Email</label>
+    <input type="text" id="aEmail" placeholder="your@email.com" autocomplete="email">
+    <label>Пароль</label>
+    <input type="password" id="aPass" placeholder="Минимум 6 символов" autocomplete="current-password" style="width:100%;border:1.5px solid var(--as);border-radius:10px;padding:11px 14px;font-family:'Mulish',sans-serif;font-size:14px;font-weight:300;color:var(--ink);background:var(--bg);outline:none;">
+    <div id="aErr" style="font-size:12px;color:#c04040;margin-top:8px;display:none;line-height:1.5;"></div>
+    <div id="aInfo" style="font-size:12px;color:var(--green);margin-top:8px;display:none;line-height:1.5;"></div>
+    <div style="display:flex;flex-direction:column;gap:9px;margin-top:16px;">
+      <button class="btn bp" style="padding:13px;" onclick="doSignIn()" id="btnSignIn">Войти</button>
+      <button class="btn bs" style="padding:13px;" onclick="doSignUp()" id="btnSignUp">Создать аккаунт</button>
+    </div>
+    <p style="font-size:11px;color:var(--ink-light);margin-top:14px;line-height:1.6;text-align:center;">
+      Личный инструмент. Храните данные осознанно — не записывайте то, что точно не готовы доверить облаку.
+    </p>
   </div>
-  <div id="vi" style="display:none;margin-top:16px;">
-    <label>Код дневника</label>
-    <input type="text" id="vCode" placeholder="Введите код" style="text-transform:uppercase;letter-spacing:.1em;">
-    <div id="verr" style="font-size:12px;color:#c04040;margin-top:5px;display:none;">Проверьте код и попробуйте снова</div>
-    <button class="btn bp" style="width:100%;padding:11px;margin-top:11px;" onclick="enterViewer()">Открыть дневник →</button>
+
+  <!-- Загрузка -->
+  <div id="authLoading" style="display:none;text-align:center;padding:20px;color:var(--ink-light);">
+    Загрузка…
   </div>
 </div>
 </div>
@@ -256,11 +267,20 @@ input::placeholder,textarea::placeholder{color:var(--ink-light);}
 <div class="modal">
   <button class="mclose" onclick="cm('mShare')">✕</button>
   <div class="mtitle">Поделиться с психологом</div>
-  <div class="msub">Отправьте этот код психологу. Он открывает файл, выбирает «Я психолог», вводит код — и видит все ваши записи и может оставлять комментарии.</div>
-  <label>Ваш код</label>
-  <div class="slink" onclick="copyCode()" id="sCode">—</div>
+  <div class="msub">Отправьте эту ссылку психологу. По ней он увидит все ваши записи и сможет оставлять комментарии.</div>
+  <label>Ссылка для психолога</label>
+  <div class="slink" onclick="copyLink()" id="sLink" style="font-size:13px;word-break:break-all;">—</div>
   <div class="copied" id="sCopied">✓ Скопировано!</div>
-  <p style="font-size:12px;color:var(--ink-light);margin-top:5px;line-height:1.6;">Нажмите на код чтобы скопировать.</p>
+  <p style="font-size:12px;color:var(--ink-light);margin-top:5px;line-height:1.6;">Нажмите на ссылку чтобы скопировать.</p>
+
+  <details style="margin-top:16px;">
+    <summary style="font-size:12px;color:var(--ink-soft);cursor:pointer;">Продвинутое: сбросить ссылку</summary>
+    <p style="font-size:12px;color:var(--ink-light);margin-top:10px;line-height:1.6;">
+      Если ссылка попала не туда, можно сгенерировать новую. Старая перестанет работать.
+    </p>
+    <button class="btn bs" style="width:100%;margin-top:10px;padding:10px;font-size:13px;" onclick="regenerateShareCode()">Создать новую ссылку</button>
+  </details>
+
   <div class="brow"><button class="btn bs" onclick="cm('mShare')">Закрыть</button></div>
 </div>
 </div>
@@ -382,6 +402,13 @@ input::placeholder,textarea::placeholder{color:var(--ink-light);}
       <div class="echip other" onclick="tE(this)">Спокойствие</div>
     </div>
 
+    <div class="eca-title">✏️ Своё чувство</div>
+    <div style="display:flex;gap:8px;align-items:stretch;">
+      <input type="text" id="customEmo" placeholder="Впишите свою эмоцию и нажмите +" style="flex:1;margin:0;" onkeydown="if(event.key==='Enter'){event.preventDefault();addCustomEmo();}">
+      <button class="btn bp" style="padding:0 18px;font-size:18px;" onclick="addCustomEmo()">+</button>
+    </div>
+    <div class="egrid" id="customEmoGrid" style="margin-top:10px;"></div>
+
     <!-- INDIVIDUAL INTENSITY -->
     <div class="emo-int-list" id="eIntList" style="display:none;"></div>
 
@@ -470,6 +497,13 @@ input::placeholder,textarea::placeholder{color:var(--ink-light);}
       <div class="need-chip" onclick="tN(this)">Честность</div>
     </div>
 
+    <div class="eca-title">✏️ Своя потребность</div>
+    <div style="display:flex;gap:8px;align-items:stretch;">
+      <input type="text" id="customNeed" placeholder="Впишите свою потребность и нажмите +" style="flex:1;margin:0;" onkeydown="if(event.key==='Enter'){event.preventDefault();addCustomNeed();}">
+      <button class="btn bp" style="padding:0 18px;font-size:18px;" onclick="addCustomNeed()">+</button>
+    </div>
+    <div class="egrid" id="customNeedGrid" style="margin-top:10px;"></div>
+
     <div style="margin-top:12px;">
       <textarea id="fNeed" rows="2" placeholder="Или опишите своими словами…"></textarea>
     </div>
@@ -491,6 +525,13 @@ input::placeholder,textarea::placeholder{color:var(--ink-light);}
       • Что бы я сказала подруге в такой ситуации?<br>
       • Через год это будет так же важно?
     </div>
+    <div class="tip tipb">
+      <strong>🎯 Зона ответственности — чья это?</strong><br>
+      • За что отвечаю <em>я</em>: мои слова, реакции, выбор, границы, забота о своих потребностях.<br>
+      • За что отвечает <em>другой человек</em>: его эмоции, его поведение, его реакции, его выбор.<br>
+      • Где я беру на себя <em>чужое</em> (виню себя за чужие чувства)?<br>
+      • Где я отдаю <em>своё</em> (жду, что другой догадается о моих нуждах)?
+    </div>
     <div class="nrow"><button class="bbk" onclick="gos(5)">←</button><button class="bnxt" onclick="gos(7)">Далее →</button></div>
   </div>
 
@@ -508,6 +549,13 @@ input::placeholder,textarea::placeholder{color:var(--ink-light);}
       • Что я могу сделать, чтобы позаботиться о своей потребности?<br>
       • Что сделал бы человек, который любит себя и уважает других?
     </div>
+    <div class="tip tipb">
+      <strong>🎯 Действую только в своей зоне</strong><br>
+      • Что я могу <em>сказать / сделать / попросить</em> из своей зоны ответственности?<br>
+      • От чего я отказываюсь — что не моё и не в моих силах изменить?<br>
+      • Какую границу мне важно обозначить, чтобы позаботиться о себе?<br>
+      • Автор жизни не управляет другими — он управляет собой и честно говорит о своих потребностях.
+    </div>
     <div class="nrow"><button class="bbk" onclick="gos(6)">←</button><button class="bnxt" onclick="saveEntry()">Сохранить ✓</button></div>
   </div>
 
@@ -523,6 +571,11 @@ input::placeholder,textarea::placeholder{color:var(--ink-light);}
 </div><!-- /main -->
 
 <script>
+// ===== КОНФИГУРАЦИЯ SUPABASE =====
+const SUPABASE_URL = 'https://igoxhbcjisounalughpi.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_zAzHI6JAkdNTlXjE-NnGaA_Gp6-UyFZ';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 const DISTS=[
   {n:"Всё или ничего",d:"Чёрно-белое: либо идеально, либо провал"},
   {n:"Катастрофизация",d:"«Это ужасно, всё пропало»"},
@@ -536,71 +589,274 @@ const DISTS=[
   {n:"Эмоциональное мышление",d:"«Чувствую себя виноватой — значит виновата»"},
 ];
 
-let role=null,code=null,step=1;
+// Состояние приложения
+let role=null;              // 'owner' или 'viewer'
+let currentUser=null;       // объект пользователя Supabase (для owner)
+let shareCode=null;         // share_code (у owner — свой, у viewer — из URL)
+let entriesCache=[];        // все записи (загружаются из Supabase)
+let step=1;
 let selEmos=[],selNeeds=[],selDists=[],editId=null;
 let viewDate=new Date(),noteColorSel={};
-let _cache={entries:[]};
 
-// ОБЛАЧНОЕ ХРАНИЛИЩЕ — данные хранятся на сервере, не в браузере
-async function getData(){
-  try {
-    const r=await window.storage.get('diary_'+code);
-    return r?JSON.parse(r.value):{entries:[]};
-  } catch(e){ return _cache; }
+// ===== ЗАПУСК ПРИЛОЖЕНИЯ =====
+window.addEventListener('DOMContentLoaded', async () => {
+  // Проверяем URL — может это режим психолога?
+  const urlParams = new URLSearchParams(window.location.search);
+  const shareParam = urlParams.get('share');
+
+  if (shareParam) {
+    // Режим психолога
+    role = 'viewer';
+    shareCode = shareParam.toUpperCase();
+    document.getElementById('mSetup').classList.remove('open');
+    await loadEntriesForViewer();
+    init();
+    return;
+  }
+
+  // Обычный режим: проверяем, есть ли активная сессия
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    currentUser = session.user;
+    role = 'owner';
+    document.getElementById('mSetup').classList.remove('open');
+    await ensureShareCode();
+    await loadEntriesForOwner();
+    init();
+  }
+  // Иначе остаётся открытым экран входа
+
+  // Позволяет войти по Enter в поле пароля
+  const passInput = document.getElementById('aPass');
+  if (passInput) {
+    passInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') doSignIn();
+    });
+  }
+});
+
+// ===== АВТОРИЗАЦИЯ =====
+function showAuthError(msg){
+  const el = document.getElementById('aErr');
+  el.textContent = msg;
+  el.style.display = 'block';
+  document.getElementById('aInfo').style.display = 'none';
 }
-async function setData(d){
-  _cache=d;
-  try { await window.storage.set('diary_'+code,JSON.stringify(d)); } catch(e){}
+function showAuthInfo(msg){
+  const el = document.getElementById('aInfo');
+  el.textContent = msg;
+  el.style.display = 'block';
+  document.getElementById('aErr').style.display = 'none';
 }
-function getE(){return _cache.entries||[];}
-async function saveE(arr){
-  _cache.entries=arr;
-  await setData(_cache);
+function clearAuthMsg(){
+  document.getElementById('aErr').style.display = 'none';
+  document.getElementById('aInfo').style.display = 'none';
 }
-async function loadData(){
-  _cache=await getData();
+function setAuthLoading(on){
+  document.getElementById('authForm').style.display = on ? 'none' : 'block';
+  document.getElementById('authLoading').style.display = on ? 'block' : 'none';
 }
 
-async function enterOwner(){
-  // Код хранится в облаке — пробуем получить, иначе создаём новый
-  let c=null;
-  try{const r=await window.storage.get('owner_code');if(r)c=r.value;}catch(e){}
-  if(!c){c=Math.random().toString(36).substring(2,8).toUpperCase();try{await window.storage.set('owner_code',c);}catch(e){}}
-  code=c;role='owner';await init();
+async function doSignIn(){
+  clearAuthMsg();
+  const email = document.getElementById('aEmail').value.trim();
+  const password = document.getElementById('aPass').value;
+  if (!email || !password) { showAuthError('Введите email и пароль'); return; }
+
+  setAuthLoading(true);
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+  setAuthLoading(false);
+
+  if (error) {
+    if (error.message.includes('Invalid login')) {
+      showAuthError('Неверный email или пароль');
+    } else if (error.message.includes('Email not confirmed')) {
+      showAuthError('Email не подтверждён. Проверьте почту или обратитесь к автору дневника.');
+    } else {
+      showAuthError('Ошибка: ' + error.message);
+    }
+    return;
+  }
+
+  currentUser = data.user;
+  role = 'owner';
+  document.getElementById('mSetup').classList.remove('open');
+  await ensureShareCode();
+  await loadEntriesForOwner();
+  init();
 }
-function showVI(){document.getElementById('vi').style.display='block';}
-async function enterViewer(){
-  const c=document.getElementById('vCode').value.trim().toUpperCase();
-  if(!c) return;
-  code=c;role='viewer';await init();
+
+async function doSignUp(){
+  clearAuthMsg();
+  const email = document.getElementById('aEmail').value.trim();
+  const password = document.getElementById('aPass').value;
+  if (!email || !password) { showAuthError('Введите email и пароль'); return; }
+  if (password.length < 6) { showAuthError('Пароль должен быть не короче 6 символов'); return; }
+
+  setAuthLoading(true);
+  const { data, error } = await sb.auth.signUp({ email, password });
+  setAuthLoading(false);
+
+  if (error) {
+    showAuthError('Ошибка регистрации: ' + error.message);
+    return;
+  }
+
+  // Если Confirm email выключен — сразу есть сессия
+  if (data.session) {
+    currentUser = data.user;
+    role = 'owner';
+    document.getElementById('mSetup').classList.remove('open');
+    await ensureShareCode();
+    await loadEntriesForOwner();
+    init();
+  } else {
+    // На случай если Confirm email включили — просим подтвердить
+    showAuthInfo('Аккаунт создан. Проверьте почту для подтверждения, затем войдите.');
+  }
 }
+
+async function doSignOut(){
+  if (!confirm('Выйти из аккаунта?')) return;
+  await sb.auth.signOut();
+  location.reload();
+}
+
+// ===== SHARE CODE =====
+// Для простоты: share_code хранится в localStorage у owner (как метка устройства),
+// а в базе — в каждой записи. При создании записи ставим текущий share_code.
+// Так психолог по одной ссылке видит все записи этого пользователя.
+async function ensureShareCode(){
+  const key = 'cbt_share_code_' + currentUser.id;
+  let c = localStorage.getItem(key);
+  if (!c) {
+    // Проверим — может у пользователя уже есть записи с share_code?
+    const { data } = await sb.from('entries')
+      .select('share_code')
+      .eq('user_id', currentUser.id)
+      .not('share_code', 'is', null)
+      .limit(1);
+    if (data && data.length > 0 && data[0].share_code) {
+      c = data[0].share_code;
+    } else {
+      c = Math.random().toString(36).substring(2, 8).toUpperCase();
+    }
+    localStorage.setItem(key, c);
+  }
+  shareCode = c;
+}
+
+async function regenerateShareCode(){
+  if (!confirm('Создать новую ссылку? Старая перестанет работать.')) return;
+  const newCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+  // Обновляем share_code во всех записях пользователя
+  const { error } = await sb.from('entries')
+    .update({ share_code: newCode })
+    .eq('user_id', currentUser.id);
+  if (error) {
+    alert('Не удалось обновить ссылку: ' + error.message);
+    return;
+  }
+  const key = 'cbt_share_code_' + currentUser.id;
+  localStorage.setItem(key, newCode);
+  shareCode = newCode;
+  updateShareLink();
+  alert('Готово. Новая ссылка создана.');
+}
+
+function updateShareLink(){
+  const base = location.origin + location.pathname;
+  const link = base + '?share=' + shareCode;
+  const el = document.getElementById('sLink');
+  if (el) el.textContent = link;
+}
+
+// ===== ЗАГРУЗКА ЗАПИСЕЙ =====
+async function loadEntriesForOwner(){
+  const { data, error } = await sb.from('entries')
+    .select('*, notes(*)')
+    .eq('user_id', currentUser.id)
+    .order('created_at', { ascending: false });
+  if (error) {
+    alert('Не удалось загрузить записи: ' + error.message);
+    entriesCache = [];
+    return;
+  }
+  entriesCache = (data || []).map(normalizeEntry);
+}
+
+async function loadEntriesForViewer(){
+  const { data, error } = await sb.from('entries')
+    .select('*, notes(*)')
+    .eq('share_code', shareCode)
+    .order('created_at', { ascending: false });
+  if (error) {
+    alert('Не удалось открыть дневник: ' + error.message);
+    entriesCache = [];
+    return;
+  }
+  if (!data || data.length === 0) {
+    // Нет записей по этому коду — возможно ссылка неверная
+    // Оставляем пустой список, покажем пустой экран
+    entriesCache = [];
+    return;
+  }
+  entriesCache = (data || []).map(normalizeEntry);
+}
+
+// Преобразуем строку из БД в формат, который ожидает UI
+function normalizeEntry(row){
+  return {
+    id: row.id,                                   // uuid — используем вместо timestamp
+    dbId: row.id,                                 // явно сохраняем для запросов
+    createdAt: row.created_at,
+    situation: row.situation || '',
+    emotions: row.emotions || [],
+    thoughts: row.thoughts || '',
+    distortions: row.distortions || [],
+    bodyReaction: row.body_reaction || '',
+    needs: row.needs || [],
+    needsText: row.needs_text || '',
+    constructive: row.constructive || '',
+    author: row.author || '',
+    notes: (row.notes || []).sort((a,b)=> new Date(a.created_at) - new Date(b.created_at))
+           .map(n => ({ dbId: n.id, text: n.text, color: n.color, ts: new Date(n.created_at).getTime() })),
+  };
+}
+
+// Удобный геттер и «апдейтер кэша» (API, совместимый с остальным кодом)
+function getE(){ return entriesCache; }
+
+// ===== UI =====
 function cm(id){document.getElementById(id).classList.remove('open');}
 
-async function init(){
-  // Показываем загрузку
-  document.getElementById('mSetup').classList.remove('open');
-  document.getElementById('jList').innerHTML='<div class="empty"><div class="spinner"></div><br>Загружаем записи…</div>';
-
+function init(){
   const b=document.getElementById('mBadge');
   if(role==='owner'){b.textContent='Мой дневник';b.className='mbadge mb-o';}
   else{b.textContent='Просмотр';b.className='mbadge mb-v';}
+
   const hr=document.getElementById('hRight');
-  if(role==='owner') hr.innerHTML=`<button class="hbtn" onclick="openShare()">Поделиться</button>`;
-  else hr.innerHTML=`<span style="font-size:12px;color:var(--ink-light)">Код: <strong>${code}</strong></span>`;
+  if(role==='owner') {
+    hr.innerHTML=`
+      <button class="hbtn" onclick="openShare()">Поделиться</button>
+      <button class="hbtn" onclick="doSignOut()" style="margin-left:6px;">Выйти</button>
+    `;
+  } else {
+    hr.innerHTML=`<span style="font-size:12px;color:var(--ink-light)">Режим психолога</span>`;
+  }
+
   document.getElementById('tabsRow').style.display='flex';
   if(role==='viewer') document.getElementById('t-write').style.display='none';
-  document.getElementById('sCode').textContent=code;
-  buildDists();updateDLbl();
 
-  // Загружаем данные из облака
-  await loadData();
-  renderJ();
+  updateShareLink();
+  buildDists();updateDLbl();renderJ();
 }
 
-function openShare(){document.getElementById('mShare').classList.add('open');}
-function copyCode(){
-  if(navigator.clipboard){navigator.clipboard.writeText(code).then(showCopied);}
-  else{const e=document.createElement('textarea');e.value=code;document.body.appendChild(e);e.select();document.execCommand('copy');document.body.removeChild(e);showCopied();}
+function openShare(){updateShareLink();document.getElementById('mShare').classList.add('open');}
+function copyLink(){
+  const link = document.getElementById('sLink').textContent;
+  if(navigator.clipboard){navigator.clipboard.writeText(link).then(showCopied);}
+  else{const e=document.createElement('textarea');e.value=link;document.body.appendChild(e);e.select();document.execCommand('copy');document.body.removeChild(e);showCopied();}
 }
 function showCopied(){const m=document.getElementById('sCopied');m.classList.add('show');setTimeout(()=>m.classList.remove('show'),2000);}
 
@@ -626,25 +882,27 @@ function updateDLbl(){
 function renderJ(){
   const entries=getE();
   const ds=viewDate.toDateString();
-  const day=entries.filter(e=>new Date(e.id).toDateString()===ds);
+  const day=entries.filter(e=>new Date(e.createdAt).toDateString()===ds);
   const c=document.getElementById('jList');
   if(!day.length){
-    c.innerHTML=`<div class="empty"><span class="empty-big">✦</span>${role==='owner'?'Записей за этот день нет.<br>Нажмите «+ Новая запись»':'Записей за этот день нет.'}</div>`;
+    if (role==='viewer' && entries.length===0) {
+      c.innerHTML=`<div class="empty"><span class="empty-big">✦</span>Записей пока нет<br><span style="font-size:12px;color:var(--ink-light);">Либо ссылка неверная, либо автор дневника ещё не сделал ни одной записи.</span></div>`;
+    } else {
+      c.innerHTML=`<div class="empty"><span class="empty-big">✦</span>${role==='owner'?'Записей за этот день нет.<br>Нажмите «+ Новая запись»':'Записей за этот день нет.'}</div>`;
+    }
     return;
   }
   c.innerHTML=day.map(e=>buildCard(e)).join('');
 }
 
 function buildCard(e){
-  const time=new Date(e.id).toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});
+  const time=new Date(e.createdAt).toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});
   const topNote=e.notes&&e.notes.length?e.notes[e.notes.length-1]:null;
   const lc=topNote?`lc-${topNote.color}`:'';
   const dotStyle=topNote?`background:${nch(topNote.color)}`:'background:transparent';
 
-  // preview tags (just names)
   const previewTags=(e.emotions||[]).slice(0,4).map(em=>`<span class="etag ${em.cat||''}">${x(em.name)}</span>`).join('');
 
-  // full emotion display with individual intensity
   let emoH='';
   if(e.emotions&&e.emotions.length){
     emoH=`<div class="esec"><div class="eslbl">Эмоции</div><div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;">`;
@@ -720,32 +978,56 @@ function selC(dot,eid,color){
   if(card) card.querySelectorAll('.cdot').forEach(d=>d.classList.remove('sel'));
   dot.classList.add('sel');
 }
+
 async function addNote(eid){
   const ta=document.getElementById('nt-'+eid);
   const txt=ta?ta.value.trim():'';if(!txt) return;
   const color=noteColorSel[eid]||'yellow';
-  const entries=getE();
-  const entry=entries.find(e=>String(e.id)===String(eid));
+  const entry=entriesCache.find(e=>String(e.id)===String(eid));
   if(!entry) return;
+
+  const { data, error } = await sb.from('notes').insert({
+    entry_id: entry.dbId,
+    text: txt,
+    color: color
+  }).select().single();
+
+  if (error) { alert('Не удалось добавить комментарий: '+error.message); return; }
+
   if(!entry.notes) entry.notes=[];
-  entry.notes.push({text:txt,color,ts:Date.now()});
-  await saveE(entries);renderJ();
+  entry.notes.push({ dbId: data.id, text: txt, color: color, ts: Date.now() });
+  ta.value='';
+  renderJ();
   setTimeout(()=>{const c=document.getElementById('ec-'+eid);if(c)c.classList.add('open');},50);
 }
+
 async function delNote(eid,idx){
   if(!confirm('Удалить комментарий?')) return;
-  const entries=getE();
-  const entry=entries.find(e=>String(e.id)===String(eid));
-  if(!entry||!entry.notes) return;
-  entry.notes.splice(idx,1);await saveE(entries);renderJ();
+  const entry=entriesCache.find(e=>String(e.id)===String(eid));
+  if(!entry||!entry.notes||!entry.notes[idx]) return;
+
+  const note = entry.notes[idx];
+  const { error } = await sb.from('notes').delete().eq('id', note.dbId);
+  if (error) { alert('Не удалось удалить: '+error.message); return; }
+
+  entry.notes.splice(idx,1);renderJ();
   setTimeout(()=>{const c=document.getElementById('ec-'+eid);if(c)c.classList.add('open');},50);
 }
+
 async function delEntry(id){
   if(!confirm('Удалить запись?')) return;
-  await saveE(getE().filter(e=>String(e.id)!==String(id)));renderJ();
+  const entry=entriesCache.find(e=>String(e.id)===String(id));
+  if(!entry) return;
+
+  const { error } = await sb.from('entries').delete().eq('id', entry.dbId);
+  if (error) { alert('Не удалось удалить: '+error.message); return; }
+
+  entriesCache = entriesCache.filter(e=>String(e.id)!==String(id));
+  renderJ();
 }
+
 function openEdit(id){
-  const entry=getE().find(e=>String(e.id)===String(id));
+  const entry=entriesCache.find(e=>String(e.id)===String(id));
   if(!entry) return;
   editId=id;
   document.getElementById('eSit').value=entry.situation||'';
@@ -756,17 +1038,32 @@ function openEdit(id){
   document.getElementById('eAuth').value=entry.author||'';
   document.getElementById('mEdit').classList.add('open');
 }
+
 async function saveEdit(){
-  const entries=getE();
-  const entry=entries.find(e=>String(e.id)===String(editId));
+  const entry=entriesCache.find(e=>String(e.id)===String(editId));
   if(!entry) return;
-  entry.situation=document.getElementById('eSit').value.trim();
-  entry.bodyReaction=document.getElementById('eBody').value.trim();
-  entry.thoughts=document.getElementById('eTho').value.trim();
-  entry.needsText=document.getElementById('eNeed').value.trim();
-  entry.constructive=document.getElementById('eCons').value.trim();
-  entry.author=document.getElementById('eAuth').value.trim();
-  await saveE(entries);cm('mEdit');renderJ();
+
+  const updates = {
+    situation:document.getElementById('eSit').value.trim(),
+    body_reaction:document.getElementById('eBody').value.trim(),
+    thoughts:document.getElementById('eTho').value.trim(),
+    needs_text:document.getElementById('eNeed').value.trim(),
+    constructive:document.getElementById('eCons').value.trim(),
+    author:document.getElementById('eAuth').value.trim(),
+  };
+
+  const { error } = await sb.from('entries').update(updates).eq('id', entry.dbId);
+  if (error) { alert('Не удалось сохранить: '+error.message); return; }
+
+  // Обновляем локальный кэш
+  entry.situation = updates.situation;
+  entry.bodyReaction = updates.body_reaction;
+  entry.thoughts = updates.thoughts;
+  entry.needsText = updates.needs_text;
+  entry.constructive = updates.constructive;
+  entry.author = updates.author;
+
+  cm('mEdit');renderJ();
   setTimeout(()=>{const c=document.getElementById('ec-'+editId);if(c)c.classList.add('open');},50);
 }
 
@@ -789,6 +1086,37 @@ function tE(el){
   renderIntensityList();
 }
 
+function addCustomEmo(){
+  const input=document.getElementById('customEmo');
+  const name=input.value.trim();
+  if(!name) return;
+  if(selEmos.find(e=>e.name.toLowerCase()===name.toLowerCase())){input.value='';return;}
+  selEmos.push({name,cat:'other',intensity:null});
+  const grid=document.getElementById('customEmoGrid');
+  const chip=document.createElement('div');
+  chip.className='echip other sel';
+  chip.textContent=name;
+  chip.onclick=function(){tE(this);if(!this.classList.contains('sel'))this.remove();};
+  grid.appendChild(chip);
+  input.value='';
+  renderIntensityList();
+}
+
+function addCustomNeed(){
+  const input=document.getElementById('customNeed');
+  const name=input.value.trim();
+  if(!name) return;
+  if(selNeeds.includes(name)){input.value='';return;}
+  selNeeds.push(name);
+  const grid=document.getElementById('customNeedGrid');
+  const chip=document.createElement('div');
+  chip.className='need-chip sel';
+  chip.textContent=name;
+  chip.onclick=function(){tN(this);if(!this.classList.contains('sel'))this.remove();};
+  grid.appendChild(chip);
+  input.value='';
+}
+
 function renderIntensityList(){
   const container=document.getElementById('eIntList');
   if(!selEmos.length){container.style.display='none';container.innerHTML='';return;}
@@ -808,7 +1136,6 @@ function renderIntensityList(){
 
 function setInt(idx,n){
   if(selEmos[idx]) selEmos[idx].intensity=n;
-  // update buttons for this emotion only
   for(let i=1;i<=10;i++){
     const b=document.getElementById(`ib-${idx}-${i}`);
     if(b){b.className='i10';if(i<=n)b.classList.add(`s${n}`);}
@@ -849,20 +1176,26 @@ function upProg(){
 }
 
 async function saveEntry(){
-  const entry={
-    id:Date.now(),
-    situation:document.getElementById('fSit').value.trim(),
-    emotions:[...selEmos],
-    thoughts:document.getElementById('fTho').value.trim(),
-    distortions:[...selDists],
-    bodyReaction:document.getElementById('fBody').value.trim(),
-    needs:[...selNeeds],
-    needsText:document.getElementById('fNeed').value.trim(),
-    constructive:document.getElementById('fCons').value.trim(),
-    author:document.getElementById('fAuth').value.trim(),
-    notes:[],
+  const newRow = {
+    user_id: currentUser.id,
+    share_code: shareCode,
+    situation: document.getElementById('fSit').value.trim(),
+    emotions: selEmos,
+    thoughts: document.getElementById('fTho').value.trim(),
+    distortions: selDists,
+    body_reaction: document.getElementById('fBody').value.trim(),
+    needs: selNeeds,
+    needs_text: document.getElementById('fNeed').value.trim(),
+    constructive: document.getElementById('fCons').value.trim(),
+    author: document.getElementById('fAuth').value.trim(),
   };
-  const arr=getE();arr.unshift(entry);await saveE(arr);
+
+  const { data, error } = await sb.from('entries').insert(newRow).select().single();
+  if (error) { alert('Не удалось сохранить запись: '+error.message); return; }
+
+  // Добавляем в кэш с notes: []
+  const entry = normalizeEntry({ ...data, notes: [] });
+  entriesCache.unshift(entry);
 
   for(let i=1;i<=7;i++){const e=document.getElementById('s'+i);if(e)e.classList.remove('vis');}
   document.getElementById('sDone').classList.add('vis');
@@ -872,14 +1205,35 @@ async function saveEntry(){
   document.getElementById('dSum').innerHTML=`
     ${entry.situation?`<div class="ds-lbl">Ситуация</div><div class="ds-val">${x(entry.situation)}</div>`:''}
     ${entry.emotions.length?`<div class="ds-lbl">Эмоции</div><div class="ds-tags">${entry.emotions.map(e=>`<div class="emo-with-int ${e.cat}"><span class="ename">${e.name}</span>${e.intensity?`<span class="eint">${e.intensity}</span>`:''}</div>`).join('')}</div>`:''}
+    ${entry.thoughts?`<div class="ds-lbl">Мысли и убеждения</div><div class="ds-val">${x(entry.thoughts)}</div>`:''}
+    ${entry.distortions&&entry.distortions.length?`<div class="ds-lbl">Когнитивные искажения</div><div class="ds-tags">${entry.distortions.map(d=>`<span class="etag">${x(d)}</span>`).join('')}</div>`:''}
+    ${entry.bodyReaction?`<div class="ds-lbl">Реакции тела и действия</div><div class="ds-val">${x(entry.bodyReaction)}</div>`:''}
+    ${(entry.needs&&entry.needs.length)||entry.needsText?`<div class="ds-lbl">Потребности</div><div class="ds-tags">${(entry.needs||[]).map(n=>`<span class="etag">${x(n)}</span>`).join('')}${entry.needsText?`<div class="ds-val" style="margin-top:6px;">${x(entry.needsText)}</div>`:''}</div>`:''}
     ${entry.constructive?`<div class="ds-lbl">Конструктивные мысли</div><div class="ds-val g">${x(entry.constructive)}</div>`:''}
-    ${entry.author?`<div class="ds-lbl">Поведение автора</div><div class="ds-val p">${x(entry.author)}</div>`:''}
+    ${entry.author?`<div class="ds-lbl">Поведение автора жизни</div><div class="ds-val p">${x(entry.author)}</div>`:''}
+    <div style="margin-top:18px;padding:11px 14px;background:var(--bs);border-radius:9px;font-size:12px;color:#2a5070;line-height:1.6;border-left:3px solid var(--blue);">
+      💡 Запись можно отредактировать в любой момент — откройте вкладку «Записи», нажмите на запись, а затем «✏️ Редактировать».
+    </div>
+    <button class="btn bs" style="width:100%;margin-top:10px;padding:11px;" onclick="editJustSaved('${entry.id}')">✏️ Редактировать эту запись сейчас</button>
   `;
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
+function editJustSaved(id){
+  switchTab('journal');
+  setTimeout(()=>{
+    const c=document.getElementById('ec-'+id);
+    if(c){c.classList.add('open');c.scrollIntoView({behavior:'smooth',block:'center'});}
+    openEdit(id);
+  },100);
+}
+
 function newEntry(){
   ['fSit','fTho','fBody','fNeed','fCons','fAuth'].forEach(id=>document.getElementById(id).value='');
+  const cE=document.getElementById('customEmo');if(cE)cE.value='';
+  const cN=document.getElementById('customNeed');if(cN)cN.value='';
+  const cEG=document.getElementById('customEmoGrid');if(cEG)cEG.innerHTML='';
+  const cNG=document.getElementById('customNeedGrid');if(cNG)cNG.innerHTML='';
   selEmos=[];selNeeds=[];selDists=[];
   document.querySelectorAll('.echip,.need-chip').forEach(c=>c.classList.remove('sel'));
   document.querySelectorAll('.ditem').forEach(d=>d.classList.remove('sel'));
