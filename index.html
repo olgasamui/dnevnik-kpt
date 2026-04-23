@@ -283,6 +283,10 @@ input::placeholder,textarea::placeholder{color:var(--ink-light);}
 
   <button class="btn bp" id="authBtn" style="width:100%;padding:13px;margin-top:16px;" onclick="doAuth()">Войти</button>
 
+  <div id="forgotWrap" style="text-align:center;margin-top:10px;">
+    <span style="font-size:12px;color:var(--aw);cursor:pointer;text-decoration:underline;" onclick="forgotPassword()">Забыли пароль?</span>
+  </div>
+
   <p id="authHint" style="font-size:12px;color:var(--ink-light);margin-top:12px;line-height:1.6;text-align:center;">
     Нет аккаунта? Переключитесь на «Регистрация» сверху.
   </p>
@@ -637,8 +641,16 @@ document.addEventListener('DOMContentLoaded',async()=>{
   }
 
   // listen for auth changes
-  sb.auth.onAuthStateChange((ev,session)=>{
+  sb.auth.onAuthStateChange(async(ev,session)=>{
     if(ev==='SIGNED_OUT'){location.href=location.pathname;}
+    if(ev==='PASSWORD_RECOVERY'){
+      const newPass=prompt('Введите новый пароль (минимум 6 символов):');
+      if(newPass&&newPass.length>=6){
+        const {error}=await sb.auth.updateUser({password:newPass});
+        if(error) alert('Ошибка: '+error.message);
+        else alert('✓ Пароль успешно изменён! Теперь войдите с новым паролем.');
+      }
+    }
   });
 });
 
@@ -648,11 +660,20 @@ function switchAuth(mode){
   document.getElementById('atLog').classList.toggle('act',mode==='log');
   document.getElementById('atReg').classList.toggle('act',mode==='reg');
   document.getElementById('authBtn').textContent=mode==='log'?'Войти':'Создать аккаунт';
+  document.getElementById('forgotWrap').style.display=mode==='log'?'block':'none';
   document.getElementById('authHint').innerHTML=mode==='log'
     ?'Нет аккаунта? Переключитесь на «Регистрация» сверху.'
-    :'После регистрации вам придёт письмо со ссылкой для подтверждения.';
+    :'Уже есть аккаунт? Переключитесь на «Вход» сверху.';
   document.getElementById('aPass').setAttribute('autocomplete',mode==='log'?'current-password':'new-password');
   clearAuthMsg();
+}
+
+async function forgotPassword(){
+  const email=document.getElementById('aEmail').value.trim();
+  if(!email){showAuthErr('Введите email, на который зарегистрирован аккаунт');return;}
+  const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});
+  if(error){showAuthErr('Ошибка: '+error.message);return;}
+  showAuthOk('✓ Письмо для сброса пароля отправлено на '+email+'. Проверьте почту и перейдите по ссылке из письма.');
 }
 
 function clearAuthMsg(){
