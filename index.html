@@ -254,9 +254,9 @@ input::placeholder,textarea::placeholder{color:var(--ink-light);}
 .esit-text{font-size:14px;color:var(--ink);line-height:1.5;margin-bottom:6px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
 
 /* PER-SECTION NOTE BUTTON */
-.sec-note-btn{display:inline-block;font-size:11px;color:var(--ink-light);cursor:pointer;margin-left:6px;opacity:.5;transition:opacity .15s;vertical-align:middle;}
-.sec-note-btn:hover{opacity:1;color:var(--aw);}
-.sec-note-form{margin-top:6px;padding:8px;background:var(--bg);border-radius:8px;border:1px solid var(--as);animation:fi .2s ease;}
+.sec-note-btn{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--aw);cursor:pointer;margin-left:8px;padding:2px 8px;border-radius:12px;border:1px solid var(--as);background:var(--paper);transition:all .15s;vertical-align:middle;font-family:'Mulish',sans-serif;font-weight:500;}
+.sec-note-btn:hover{background:var(--as);border-color:var(--aw);}
+.sec-note-form{margin-top:8px;padding:10px;background:var(--bg);border-radius:10px;border:1px solid var(--as);animation:fi .2s ease;}
 .sec-note-inline{margin-top:5px;}
 </style>
 </head>
@@ -752,6 +752,11 @@ async function startApp(){
     b.textContent='Просмотр (психолог)';b.className='mbadge mb-v';
     document.getElementById('t-write').style.display='none';
     hr.innerHTML=`<span style="font-size:11px;color:var(--ink-light)">Режим психолога</span>`;
+    // add hint for psychologist
+    const hint=document.createElement('div');
+    hint.style.cssText='background:var(--bs);border-left:3px solid var(--blue);padding:10px 14px;border-radius:0 0 10px 10px;font-size:12px;color:#2a5070;line-height:1.5;max-width:680px;margin:0 auto;';
+    hint.innerHTML='💡 Вы можете оставлять комментарии к каждому разделу записи — нажмите <strong>«💬 ответить»</strong> рядом с нужным пунктом.';
+    document.getElementById('mainWrap').prepend(hint);
   }
 
   buildDists();
@@ -855,7 +860,7 @@ function buildCard(e){
   };
   const secBtn=(section)=>{
     if(role!=='viewer') return '';
-    return `<span class="sec-note-btn" onclick="toggleSecNote(event,'${e.id}','${section}')">💬</span>`;
+    return `<span class="sec-note-btn" onclick="toggleSecNote(event,'${e.id}','${section}')">💬 ответить</span>`;
   };
   const secForm=(section)=>{
     if(role!=='viewer') return '';
