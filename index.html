@@ -5,13 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>КПТ Дневник</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Mulish:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <style>
 :root{
   --bg:#f7f4ef;--paper:#fdfbf7;--ink:#2c2416;--ink-soft:#6b5e4a;--ink-light:#b5a898;
   --accent:#7a5c3e;--aw:#c4845a;--as:#e8d9ca;--shadow:rgba(44,36,22,0.09);
   --green:#5a8a6a;--gs:#e8f2eb;--blue:#4a7a9a;--bs:#e0ecf5;--pu:#7a6ea0;--ps:#ede8f5;
   --ny:#fff8d6;--nyb:#d4a800;--nb:#d6eeff;--nbb:#4a9de0;--ng:#d6f5e2;--ngb:#3aaa5a;--np:#ffd6f0;--npb:#d04090;
+  --err:#c04040;--errs:#f5e8e8;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Mulish',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;font-weight:300;}
@@ -24,16 +25,26 @@ body{font-family:'Mulish',sans-serif;background:var(--bg);color:var(--ink);min-h
 .mclose{float:right;background:none;border:none;font-size:20px;cursor:pointer;color:var(--ink-light);}
 label{display:block;font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-light);margin-bottom:5px;margin-top:14px;}
 label:first-of-type{margin-top:0;}
-input[type=text],textarea{width:100%;border:1.5px solid var(--as);border-radius:10px;padding:11px 14px;font-family:'Mulish',sans-serif;font-size:14px;font-weight:300;color:var(--ink);background:var(--bg);outline:none;transition:border .2s,box-shadow .2s;resize:none;}
-input[type=text]:focus,textarea:focus{border-color:var(--aw);box-shadow:0 0 0 3px rgba(196,132,90,.12);}
+input[type=text],input[type=email],input[type=password],textarea{width:100%;border:1.5px solid var(--as);border-radius:10px;padding:11px 14px;font-family:'Mulish',sans-serif;font-size:14px;font-weight:300;color:var(--ink);background:var(--bg);outline:none;transition:border .2s,box-shadow .2s;resize:none;}
+input[type=text]:focus,input[type=email]:focus,input[type=password]:focus,textarea:focus{border-color:var(--aw);box-shadow:0 0 0 3px rgba(196,132,90,.12);}
 input::placeholder,textarea::placeholder{color:var(--ink-light);}
 .btn{font-family:'Mulish',sans-serif;font-size:14px;font-weight:500;padding:11px 20px;border-radius:10px;cursor:pointer;transition:all .2s;border:none;}
 .bp{background:var(--accent);color:#fff;box-shadow:0 4px 14px rgba(122,92,62,.22);}
 .bp:hover{background:var(--aw);}
+.bp:disabled{opacity:.5;cursor:not-allowed;}
 .bs{background:none;border:1.5px solid var(--as);color:var(--ink-soft);}
 .bs:hover{background:var(--as);}
 .brow{display:flex;gap:10px;margin-top:18px;}
 .brow .btn{flex:1;}
+.ferr{font-size:12px;color:var(--err);background:var(--errs);padding:8px 12px;border-radius:8px;margin-top:10px;display:none;line-height:1.5;}
+.ferr.show{display:block;}
+.fok{font-size:12px;color:var(--green);background:var(--gs);padding:8px 12px;border-radius:8px;margin-top:10px;display:none;line-height:1.5;}
+.fok.show{display:block;}
+
+/* AUTH TABS */
+.atabs{display:flex;gap:4px;background:var(--bg);padding:4px;border-radius:10px;margin-bottom:18px;}
+.atab{flex:1;padding:9px;text-align:center;border-radius:7px;font-size:13px;font-weight:500;color:var(--ink-light);cursor:pointer;transition:all .15s;}
+.atab.act{background:var(--paper);color:var(--accent);box-shadow:0 2px 6px rgba(44,36,22,.08);}
 
 /* HEADER */
 .header{background:var(--paper);border-bottom:1px solid var(--as);padding:13px 18px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;gap:10px;}
@@ -44,6 +55,7 @@ input::placeholder,textarea::placeholder{color:var(--ink-light);}
 .mb-v{background:var(--nb);color:#2a6090;}
 .hbtn{font-family:'Mulish',sans-serif;font-size:12px;font-weight:500;color:var(--ink-soft);background:none;border:1px solid var(--as);padding:6px 12px;border-radius:20px;cursor:pointer;transition:all .2s;white-space:nowrap;}
 .hbtn:hover{background:var(--as);color:var(--accent);}
+.hright{display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
 
 /* TABS */
 .tabs{background:var(--paper);border-bottom:1px solid var(--as);display:flex;padding:0 18px;}
@@ -53,6 +65,9 @@ input::placeholder,textarea::placeholder{color:var(--ink-light);}
 .main{max-width:680px;margin:0 auto;padding:24px 16px 80px;}
 .view{display:none;}
 .view.active{display:block;}
+.gloading{text-align:center;padding:80px 20px;color:var(--ink-light);font-size:14px;}
+.gloading::after{content:'';display:inline-block;width:14px;height:14px;border:2px solid var(--as);border-top-color:var(--accent);border-radius:50%;margin-left:9px;vertical-align:middle;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
 
 /* JOURNAL */
 .jtop{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;gap:10px;flex-wrap:wrap;}
@@ -202,6 +217,7 @@ input::placeholder,textarea::placeholder{color:var(--ink-light);}
 .bbk:hover{background:var(--as);}
 .bnxt{flex:1;padding:12px 20px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-family:'Mulish',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all .2s;box-shadow:0 4px 16px rgba(122,92,62,.22);}
 .bnxt:hover{background:var(--aw);transform:translateY(-1px);}
+.bnxt:disabled{opacity:.6;cursor:not-allowed;}
 
 /* TIPS */
 .tip{margin-top:13px;padding:11px 14px;border-radius:9px;font-size:13px;line-height:1.6;border-left:3px solid var(--aw);background:#fff9f5;color:var(--ink-soft);}
@@ -222,43 +238,54 @@ input::placeholder,textarea::placeholder{color:var(--ink-light);}
 .bnew:hover{background:var(--aw);}
 
 /* SHARE */
-.slink{background:var(--bg);border:1.5px solid var(--as);border-radius:10px;padding:12px 14px;font-size:15px;font-weight:700;color:var(--accent);margin:10px 0;cursor:pointer;transition:background .15s;letter-spacing:.12em;text-align:center;display:block;}
+.slink{background:var(--bg);border:1.5px solid var(--as);border-radius:10px;padding:12px 14px;font-size:13px;font-weight:500;color:var(--accent);margin:10px 0;cursor:pointer;transition:background .15s;word-break:break-all;line-height:1.5;display:block;}
 .slink:hover{background:var(--as);}
 .copied{font-size:12px;color:var(--green);margin-top:4px;display:none;}
 .copied.show{display:block;}
 
 @media(max-width:500px){.card{padding:18px 14px;}.ctitle{font-size:20px;}.main{padding:16px 12px 60px;}.header{padding:11px 13px;}}
+
+/* DATE GROUP HEADERS */
+.dgroup{margin-top:20px;}
+.dgroup:first-child{margin-top:0;}
+.dgroup-lbl{font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--ink-light);padding:8px 4px 8px;border-bottom:1px solid var(--as);margin-bottom:10px;}
+
+/* TRUNCATED PREVIEW */
+.esit-text{font-size:14px;color:var(--ink);line-height:1.5;margin-bottom:6px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
+
+/* PER-SECTION NOTE BUTTON */
+.sec-note-btn{display:inline-block;font-size:11px;color:var(--ink-light);cursor:pointer;margin-left:6px;opacity:.5;transition:opacity .15s;vertical-align:middle;}
+.sec-note-btn:hover{opacity:1;color:var(--aw);}
+.sec-note-form{margin-top:6px;padding:8px;background:var(--bg);border-radius:8px;border:1px solid var(--as);animation:fi .2s ease;}
+.sec-note-inline{margin-top:5px;}
 </style>
 </head>
 <body>
 
-<!-- SETUP -->
-<div class="overlay open" id="mSetup">
+<!-- AUTH -->
+<div class="overlay open" id="mAuth">
 <div class="modal">
   <div class="mtitle">КПТ <em style="font-style:italic;color:var(--aw)">дневник</em></div>
-  <div class="msub" id="mSetupSub">Войдите или создайте аккаунт. Ваши записи хранятся в облаке и доступны с любого устройства.</div>
+  <div class="msub" id="authSub">Войдите, чтобы начать вести дневник. Ваши записи хранятся в облаке — доступ с любого устройства.</div>
 
-  <!-- Форма входа/регистрации -->
-  <div id="authForm">
-    <label>Email</label>
-    <input type="text" id="aEmail" placeholder="your@email.com" autocomplete="email">
-    <label>Пароль</label>
-    <input type="password" id="aPass" placeholder="Минимум 6 символов" autocomplete="current-password" style="width:100%;border:1.5px solid var(--as);border-radius:10px;padding:11px 14px;font-family:'Mulish',sans-serif;font-size:14px;font-weight:300;color:var(--ink);background:var(--bg);outline:none;">
-    <div id="aErr" style="font-size:12px;color:#c04040;margin-top:8px;display:none;line-height:1.5;"></div>
-    <div id="aInfo" style="font-size:12px;color:var(--green);margin-top:8px;display:none;line-height:1.5;"></div>
-    <div style="display:flex;flex-direction:column;gap:9px;margin-top:16px;">
-      <button class="btn bp" style="padding:13px;" onclick="doSignIn()" id="btnSignIn">Войти</button>
-      <button class="btn bs" style="padding:13px;" onclick="doSignUp()" id="btnSignUp">Создать аккаунт</button>
-    </div>
-    <p style="font-size:11px;color:var(--ink-light);margin-top:14px;line-height:1.6;text-align:center;">
-      Личный инструмент. Храните данные осознанно — не записывайте то, что точно не готовы доверить облаку.
-    </p>
+  <div class="atabs">
+    <div class="atab act" id="atLog" onclick="switchAuth('log')">Вход</div>
+    <div class="atab" id="atReg" onclick="switchAuth('reg')">Регистрация</div>
   </div>
 
-  <!-- Загрузка -->
-  <div id="authLoading" style="display:none;text-align:center;padding:20px;color:var(--ink-light);">
-    Загрузка…
-  </div>
+  <label>Email</label>
+  <input type="email" id="aEmail" placeholder="your@email.com" autocomplete="email">
+  <label>Пароль</label>
+  <input type="password" id="aPass" placeholder="минимум 6 символов" autocomplete="current-password">
+
+  <div class="ferr" id="authErr"></div>
+  <div class="fok" id="authOk"></div>
+
+  <button class="btn bp" id="authBtn" style="width:100%;padding:13px;margin-top:16px;" onclick="doAuth()">Войти</button>
+
+  <p id="authHint" style="font-size:12px;color:var(--ink-light);margin-top:12px;line-height:1.6;text-align:center;">
+    Нет аккаунта? Переключитесь на «Регистрация» сверху.
+  </p>
 </div>
 </div>
 
@@ -267,20 +294,11 @@ input::placeholder,textarea::placeholder{color:var(--ink-light);}
 <div class="modal">
   <button class="mclose" onclick="cm('mShare')">✕</button>
   <div class="mtitle">Поделиться с психологом</div>
-  <div class="msub">Отправьте эту ссылку психологу. По ней он увидит все ваши записи и сможет оставлять комментарии.</div>
+  <div class="msub">Отправьте эту ссылку психологу. Он откроет её в браузере и увидит все ваши записи. Сможет оставлять комментарии, но не сможет ничего изменить или удалить.</div>
   <label>Ссылка для психолога</label>
-  <div class="slink" onclick="copyLink()" id="sLink" style="font-size:13px;word-break:break-all;">—</div>
-  <div class="copied" id="sCopied">✓ Скопировано!</div>
+  <div class="slink" onclick="copyLink()" id="sLink">—</div>
+  <div class="copied" id="sCopied">✓ Ссылка скопирована!</div>
   <p style="font-size:12px;color:var(--ink-light);margin-top:5px;line-height:1.6;">Нажмите на ссылку чтобы скопировать.</p>
-
-  <details style="margin-top:16px;">
-    <summary style="font-size:12px;color:var(--ink-soft);cursor:pointer;">Продвинутое: сбросить ссылку</summary>
-    <p style="font-size:12px;color:var(--ink-light);margin-top:10px;line-height:1.6;">
-      Если ссылка попала не туда, можно сгенерировать новую. Старая перестанет работать.
-    </p>
-    <button class="btn bs" style="width:100%;margin-top:10px;padding:10px;font-size:13px;" onclick="regenerateShareCode()">Создать новую ссылку</button>
-  </details>
-
   <div class="brow"><button class="btn bs" onclick="cm('mShare')">Закрыть</button></div>
 </div>
 </div>
@@ -301,12 +319,12 @@ input::placeholder,textarea::placeholder{color:var(--ink-light);}
 </div>
 
 <!-- HEADER -->
-<header class="header">
+<header class="header" id="topHeader" style="display:none;">
   <div style="display:flex;align-items:center;gap:9px;min-width:0;">
     <div class="htitle">КПТ <em>дневник</em></div>
     <div class="mbadge" id="mBadge"></div>
   </div>
-  <div id="hRight"></div>
+  <div class="hright" id="hRight"></div>
 </header>
 
 <!-- TABS -->
@@ -315,19 +333,15 @@ input::placeholder,textarea::placeholder{color:var(--ink-light);}
   <div class="tab" id="t-write" onclick="switchTab('write')">+ Новая запись</div>
 </div>
 
-<div class="main">
+<div class="main" id="mainWrap" style="display:none;">
 
 <!-- JOURNAL -->
 <div class="view active" id="v-journal">
   <div class="jtop">
-    <div class="jhead" id="jHead">Дневник</div>
-    <div class="dnav">
-      <button class="dnbtn" onclick="shiftDay(-1)">‹</button>
-      <div class="dlbl" id="dLbl"></div>
-      <button class="dnbtn" onclick="shiftDay(1)">›</button>
-    </div>
+    <div class="jhead">Записи</div>
+    <button class="hbtn" onclick="exportEntries()" title="Скачать все записи" id="btnExport" style="display:none;">📥 Скачать записи</button>
   </div>
-  <div id="jList"></div>
+  <div id="jList"><div class="gloading">Загрузка записей</div></div>
 </div>
 
 <!-- WRITE -->
@@ -387,7 +401,7 @@ input::placeholder,textarea::placeholder{color:var(--ink-light);}
       <div class="echip pos" onclick="tE(this)">Спокойствие</div><div class="echip pos" onclick="tE(this)">Любопытство</div>
       <div class="echip pos" onclick="tE(this)">Надежда</div><div class="echip pos" onclick="tE(this)">Уверенность</div>
       <div class="echip pos" onclick="tE(this)">Удовлетворение</div><div class="echip pos" onclick="tE(this)">Веселье</div>
-      <div class="echip pos" onclick="tE(this)">Облегчение</div><div class="echip pos" onclick="tE(this)">Романтика</div>
+      <div class="echip pos" onclick="tE(this)">Романтика</div>
     </div>
 
     <div class="eca-title">✨ Другие чувства</div>
@@ -399,7 +413,6 @@ input::placeholder,textarea::placeholder{color:var(--ink-light);}
       <div class="echip other" onclick="tE(this)">Очарование</div><div class="echip other" onclick="tE(this)">Удивление</div>
       <div class="echip other" onclick="tE(this)">Возбуждение</div><div class="echip other" onclick="tE(this)">Интерес</div>
       <div class="echip other" onclick="tE(this)">Сексуальное желание</div>
-      <div class="echip other" onclick="tE(this)">Спокойствие</div>
     </div>
 
     <div class="eca-title">✏️ Своё чувство</div>
@@ -556,7 +569,7 @@ input::placeholder,textarea::placeholder{color:var(--ink-light);}
       • Какую границу мне важно обозначить, чтобы позаботиться о себе?<br>
       • Автор жизни не управляет другими — он управляет собой и честно говорит о своих потребностях.
     </div>
-    <div class="nrow"><button class="bbk" onclick="gos(6)">←</button><button class="bnxt" onclick="saveEntry()">Сохранить ✓</button></div>
+    <div class="nrow"><button class="bbk" onclick="gos(6)">←</button><button class="bnxt" id="btnSave" onclick="saveEntry()">Сохранить ✓</button></div>
   </div>
 
   <!-- DONE -->
@@ -571,7 +584,7 @@ input::placeholder,textarea::placeholder{color:var(--ink-light);}
 </div><!-- /main -->
 
 <script>
-// ===== КОНФИГУРАЦИЯ SUPABASE =====
+// ============ SUPABASE CONFIG ============
 const SUPABASE_URL = 'https://igoxhbcjisounalughpi.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_zAzHI6JAkdNTlXjE-NnGaA_Gp6-UyFZ';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -589,276 +602,173 @@ const DISTS=[
   {n:"Эмоциональное мышление",d:"«Чувствую себя виноватой — значит виновата»"},
 ];
 
-// Состояние приложения
-let role=null;              // 'owner' или 'viewer'
-let currentUser=null;       // объект пользователя Supabase (для owner)
-let shareCode=null;         // share_code (у owner — свой, у viewer — из URL)
-let entriesCache=[];        // все записи (загружаются из Supabase)
+let role=null;            // 'owner' | 'viewer'
+let user=null;            // Supabase user object (owner mode)
+let shareCode=null;       // current user's share code
+let viewerCode=null;      // share code in URL (viewer mode)
+let entriesCache=[];      // cached entries for current view
 let step=1;
 let selEmos=[],selNeeds=[],selDists=[],editId=null;
-let viewDate=new Date(),noteColorSel={};
+let noteColorSel={};
+let authMode='log';       // 'log' | 'reg'
 
-// ===== ЗАПУСК ПРИЛОЖЕНИЯ =====
-window.addEventListener('DOMContentLoaded', async () => {
-  // Проверяем URL — может это режим психолога?
-  const urlParams = new URLSearchParams(window.location.search);
-  const shareParam = urlParams.get('share');
-
-  if (shareParam) {
-    // Режим психолога
-    role = 'viewer';
-    shareCode = shareParam.toUpperCase();
-    document.getElementById('mSetup').classList.remove('open');
-    await loadEntriesForViewer();
-    init();
+// ============ INIT ============
+document.addEventListener('DOMContentLoaded',async()=>{
+  // check for ?share=CODE in URL => viewer mode
+  const params=new URLSearchParams(location.search);
+  const urlShare=params.get('share');
+  if(urlShare){
+    viewerCode=urlShare;
+    role='viewer';
+    await startApp();
     return;
   }
-
-  // Обычный режим: проверяем, есть ли активная сессия
-  const { data: { session } } = await sb.auth.getSession();
-  if (session) {
-    currentUser = session.user;
-    role = 'owner';
-    document.getElementById('mSetup').classList.remove('open');
-    await ensureShareCode();
-    await loadEntriesForOwner();
-    init();
+  // check if already logged in
+  const {data:{session}}=await sb.auth.getSession();
+  if(session&&session.user){
+    user=session.user;
+    role='owner';
+    await startApp();
+  } else {
+    // show auth screen
+    document.getElementById('mAuth').classList.add('open');
   }
-  // Иначе остаётся открытым экран входа
 
-  // Позволяет войти по Enter в поле пароля
-  const passInput = document.getElementById('aPass');
-  if (passInput) {
-    passInput.addEventListener('keydown', e => {
-      if (e.key === 'Enter') doSignIn();
-    });
-  }
+  // listen for auth changes
+  sb.auth.onAuthStateChange((ev,session)=>{
+    if(ev==='SIGNED_OUT'){location.href=location.pathname;}
+  });
 });
 
-// ===== АВТОРИЗАЦИЯ =====
-function showAuthError(msg){
-  const el = document.getElementById('aErr');
-  el.textContent = msg;
-  el.style.display = 'block';
-  document.getElementById('aInfo').style.display = 'none';
+// ============ AUTH ============
+function switchAuth(mode){
+  authMode=mode;
+  document.getElementById('atLog').classList.toggle('act',mode==='log');
+  document.getElementById('atReg').classList.toggle('act',mode==='reg');
+  document.getElementById('authBtn').textContent=mode==='log'?'Войти':'Создать аккаунт';
+  document.getElementById('authHint').innerHTML=mode==='log'
+    ?'Нет аккаунта? Переключитесь на «Регистрация» сверху.'
+    :'После регистрации вам придёт письмо со ссылкой для подтверждения.';
+  document.getElementById('aPass').setAttribute('autocomplete',mode==='log'?'current-password':'new-password');
+  clearAuthMsg();
 }
-function showAuthInfo(msg){
-  const el = document.getElementById('aInfo');
-  el.textContent = msg;
-  el.style.display = 'block';
-  document.getElementById('aErr').style.display = 'none';
-}
+
 function clearAuthMsg(){
-  document.getElementById('aErr').style.display = 'none';
-  document.getElementById('aInfo').style.display = 'none';
-}
-function setAuthLoading(on){
-  document.getElementById('authForm').style.display = on ? 'none' : 'block';
-  document.getElementById('authLoading').style.display = on ? 'block' : 'none';
+  document.getElementById('authErr').classList.remove('show');
+  document.getElementById('authOk').classList.remove('show');
 }
 
-async function doSignIn(){
+function showAuthErr(msg){
   clearAuthMsg();
-  const email = document.getElementById('aEmail').value.trim();
-  const password = document.getElementById('aPass').value;
-  if (!email || !password) { showAuthError('Введите email и пароль'); return; }
+  const e=document.getElementById('authErr');
+  e.textContent=msg;e.classList.add('show');
+}
+function showAuthOk(msg){
+  clearAuthMsg();
+  const e=document.getElementById('authOk');
+  e.textContent=msg;e.classList.add('show');
+}
 
-  setAuthLoading(true);
-  const { data, error } = await sb.auth.signInWithPassword({ email, password });
-  setAuthLoading(false);
+async function doAuth(){
+  const email=document.getElementById('aEmail').value.trim();
+  const pass=document.getElementById('aPass').value;
+  if(!email||!pass){showAuthErr('Заполните email и пароль');return;}
+  if(pass.length<6){showAuthErr('Пароль должен быть минимум 6 символов');return;}
 
-  if (error) {
-    if (error.message.includes('Invalid login')) {
-      showAuthError('Неверный email или пароль');
-    } else if (error.message.includes('Email not confirmed')) {
-      showAuthError('Email не подтверждён. Проверьте почту или обратитесь к автору дневника.');
+  const btn=document.getElementById('authBtn');
+  btn.disabled=true;btn.textContent='Подождите…';
+
+  try{
+    if(authMode==='reg'){
+      const {data,error}=await sb.auth.signUp({email,password:pass});
+      if(error) throw error;
+      if(data.user&&!data.session){
+        showAuthOk('✓ Аккаунт создан! Проверьте почту — мы отправили письмо со ссылкой для подтверждения. После подтверждения вернитесь сюда и войдите.');
+        btn.disabled=false;btn.textContent='Создать аккаунт';
+        return;
+      }
+      // if auto-logged in (confirm email disabled)
+      user=data.user;role='owner';
+      document.getElementById('mAuth').classList.remove('open');
+      await startApp();
     } else {
-      showAuthError('Ошибка: ' + error.message);
+      const {data,error}=await sb.auth.signInWithPassword({email,password:pass});
+      if(error) throw error;
+      user=data.user;role='owner';
+      document.getElementById('mAuth').classList.remove('open');
+      await startApp();
     }
-    return;
-  }
-
-  currentUser = data.user;
-  role = 'owner';
-  document.getElementById('mSetup').classList.remove('open');
-  await ensureShareCode();
-  await loadEntriesForOwner();
-  init();
-}
-
-async function doSignUp(){
-  clearAuthMsg();
-  const email = document.getElementById('aEmail').value.trim();
-  const password = document.getElementById('aPass').value;
-  if (!email || !password) { showAuthError('Введите email и пароль'); return; }
-  if (password.length < 6) { showAuthError('Пароль должен быть не короче 6 символов'); return; }
-
-  setAuthLoading(true);
-  const { data, error } = await sb.auth.signUp({ email, password });
-  setAuthLoading(false);
-
-  if (error) {
-    showAuthError('Ошибка регистрации: ' + error.message);
-    return;
-  }
-
-  // Если Confirm email выключен — сразу есть сессия
-  if (data.session) {
-    currentUser = data.user;
-    role = 'owner';
-    document.getElementById('mSetup').classList.remove('open');
-    await ensureShareCode();
-    await loadEntriesForOwner();
-    init();
-  } else {
-    // На случай если Confirm email включили — просим подтвердить
-    showAuthInfo('Аккаунт создан. Проверьте почту для подтверждения, затем войдите.');
+  }catch(e){
+    let msg=e.message||'Ошибка';
+    if(msg.includes('Invalid login')) msg='Неверный email или пароль';
+    else if(msg.includes('already registered')) msg='Этот email уже зарегистрирован. Переключитесь на «Вход».';
+    else if(msg.includes('Email not confirmed')) msg='Email не подтверждён. Проверьте почту и перейдите по ссылке из письма.';
+    showAuthErr(msg);
+    btn.disabled=false;btn.textContent=authMode==='log'?'Войти':'Создать аккаунт';
   }
 }
 
-async function doSignOut(){
-  if (!confirm('Выйти из аккаунта?')) return;
+async function logout(){
+  if(!confirm('Выйти из аккаунта?')) return;
   await sb.auth.signOut();
-  location.reload();
+  location.href=location.pathname;
 }
 
-// ===== SHARE CODE =====
-// Для простоты: share_code хранится в localStorage у owner (как метка устройства),
-// а в базе — в каждой записи. При создании записи ставим текущий share_code.
-// Так психолог по одной ссылке видит все записи этого пользователя.
-async function ensureShareCode(){
-  const key = 'cbt_share_code_' + currentUser.id;
-  let c = localStorage.getItem(key);
-  if (!c) {
-    // Проверим — может у пользователя уже есть записи с share_code?
-    const { data } = await sb.from('entries')
-      .select('share_code')
-      .eq('user_id', currentUser.id)
-      .not('share_code', 'is', null)
-      .limit(1);
-    if (data && data.length > 0 && data[0].share_code) {
-      c = data[0].share_code;
-    } else {
-      c = Math.random().toString(36).substring(2, 8).toUpperCase();
-    }
-    localStorage.setItem(key, c);
-  }
-  shareCode = c;
+// ============ SHARE CODE ============
+function genShareCode(){
+  // 16 char alphanumeric, unguessable
+  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let s='';for(let i=0;i<16;i++) s+=chars[Math.floor(Math.random()*chars.length)];
+  return s;
 }
 
-async function regenerateShareCode(){
-  if (!confirm('Создать новую ссылку? Старая перестанет работать.')) return;
-  const newCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-  // Обновляем share_code во всех записях пользователя
-  const { error } = await sb.from('entries')
-    .update({ share_code: newCode })
-    .eq('user_id', currentUser.id);
-  if (error) {
-    alert('Не удалось обновить ссылку: ' + error.message);
-    return;
-  }
-  const key = 'cbt_share_code_' + currentUser.id;
-  localStorage.setItem(key, newCode);
-  shareCode = newCode;
-  updateShareLink();
-  alert('Готово. Новая ссылка создана.');
+async function getOrCreateShareCode(){
+  // try fetching from any existing entry
+  const {data}=await sb.from('entries').select('share_code').eq('user_id',user.id).not('share_code','is',null).limit(1);
+  if(data&&data.length){return data[0].share_code;}
+  // no code yet: generate one, will be attached to new entries
+  // also: if user has entries without codes, update them
+  const code=genShareCode();
+  await sb.from('entries').update({share_code:code}).eq('user_id',user.id);
+  return code;
 }
 
-function updateShareLink(){
-  const base = location.origin + location.pathname;
-  const link = base + '?share=' + shareCode;
-  const el = document.getElementById('sLink');
-  if (el) el.textContent = link;
-}
-
-// ===== ЗАГРУЗКА ЗАПИСЕЙ =====
-async function loadEntriesForOwner(){
-  const { data, error } = await sb.from('entries')
-    .select('*, notes(*)')
-    .eq('user_id', currentUser.id)
-    .order('created_at', { ascending: false });
-  if (error) {
-    alert('Не удалось загрузить записи: ' + error.message);
-    entriesCache = [];
-    return;
-  }
-  entriesCache = (data || []).map(normalizeEntry);
-}
-
-async function loadEntriesForViewer(){
-  const { data, error } = await sb.from('entries')
-    .select('*, notes(*)')
-    .eq('share_code', shareCode)
-    .order('created_at', { ascending: false });
-  if (error) {
-    alert('Не удалось открыть дневник: ' + error.message);
-    entriesCache = [];
-    return;
-  }
-  if (!data || data.length === 0) {
-    // Нет записей по этому коду — возможно ссылка неверная
-    // Оставляем пустой список, покажем пустой экран
-    entriesCache = [];
-    return;
-  }
-  entriesCache = (data || []).map(normalizeEntry);
-}
-
-// Преобразуем строку из БД в формат, который ожидает UI
-function normalizeEntry(row){
-  return {
-    id: row.id,                                   // uuid — используем вместо timestamp
-    dbId: row.id,                                 // явно сохраняем для запросов
-    createdAt: row.created_at,
-    situation: row.situation || '',
-    emotions: row.emotions || [],
-    thoughts: row.thoughts || '',
-    distortions: row.distortions || [],
-    bodyReaction: row.body_reaction || '',
-    needs: row.needs || [],
-    needsText: row.needs_text || '',
-    constructive: row.constructive || '',
-    author: row.author || '',
-    notes: (row.notes || []).sort((a,b)=> new Date(a.created_at) - new Date(b.created_at))
-           .map(n => ({ dbId: n.id, text: n.text, color: n.color, ts: new Date(n.created_at).getTime() })),
-  };
-}
-
-// Удобный геттер и «апдейтер кэша» (API, совместимый с остальным кодом)
-function getE(){ return entriesCache; }
-
-// ===== UI =====
-function cm(id){document.getElementById(id).classList.remove('open');}
-
-function init(){
-  const b=document.getElementById('mBadge');
-  if(role==='owner'){b.textContent='Мой дневник';b.className='mbadge mb-o';}
-  else{b.textContent='Просмотр';b.className='mbadge mb-v';}
-
-  const hr=document.getElementById('hRight');
-  if(role==='owner') {
-    hr.innerHTML=`
-      <button class="hbtn" onclick="openShare()">Поделиться</button>
-      <button class="hbtn" onclick="doSignOut()" style="margin-left:6px;">Выйти</button>
-    `;
-  } else {
-    hr.innerHTML=`<span style="font-size:12px;color:var(--ink-light)">Режим психолога</span>`;
-  }
-
+// ============ START ============
+async function startApp(){
+  document.getElementById('topHeader').style.display='flex';
   document.getElementById('tabsRow').style.display='flex';
-  if(role==='viewer') document.getElementById('t-write').style.display='none';
+  document.getElementById('mainWrap').style.display='block';
 
-  updateShareLink();
-  buildDists();updateDLbl();renderJ();
+  const b=document.getElementById('mBadge');
+  const hr=document.getElementById('hRight');
+  if(role==='owner'){
+    b.textContent='Мой дневник';b.className='mbadge mb-o';
+    shareCode=await getOrCreateShareCode();
+    hr.innerHTML=`<button class="hbtn" onclick="openShare()">Поделиться</button>
+                  <button class="hbtn" onclick="logout()">Выйти</button>`;
+  } else {
+    b.textContent='Просмотр (психолог)';b.className='mbadge mb-v';
+    document.getElementById('t-write').style.display='none';
+    hr.innerHTML=`<span style="font-size:11px;color:var(--ink-light)">Режим психолога</span>`;
+  }
+
+  buildDists();
+  await renderJ();
+  if(role==='owner'&&user.email==='olgabond1986@gmail.com') document.getElementById('btnExport').style.display='inline-block';
 }
 
-function openShare(){updateShareLink();document.getElementById('mShare').classList.add('open');}
+function openShare(){
+  const link=`${location.origin}${location.pathname}?share=${shareCode}`;
+  document.getElementById('sLink').textContent=link;
+  document.getElementById('mShare').classList.add('open');
+}
 function copyLink(){
-  const link = document.getElementById('sLink').textContent;
-  if(navigator.clipboard){navigator.clipboard.writeText(link).then(showCopied);}
-  else{const e=document.createElement('textarea');e.value=link;document.body.appendChild(e);e.select();document.execCommand('copy');document.body.removeChild(e);showCopied();}
+  const text=document.getElementById('sLink').textContent;
+  if(navigator.clipboard){navigator.clipboard.writeText(text).then(showCopied);}
+  else{const e=document.createElement('textarea');e.value=text;document.body.appendChild(e);e.select();document.execCommand('copy');document.body.removeChild(e);showCopied();}
 }
 function showCopied(){const m=document.getElementById('sCopied');m.classList.add('show');setTimeout(()=>m.classList.remove('show'),2000);}
+function cm(id){document.getElementById(id).classList.remove('open');}
 
 function switchTab(t){
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
@@ -868,63 +778,111 @@ function switchTab(t){
   if(t==='journal') renderJ();
 }
 
-function shiftDay(d){viewDate.setDate(viewDate.getDate()+d);updateDLbl();renderJ();}
-function updateDLbl(){
-  const today=new Date(),yest=new Date(today);yest.setDate(today.getDate()-1);
-  let lbl;
-  if(viewDate.toDateString()===today.toDateString()) lbl='Сегодня';
-  else if(viewDate.toDateString()===yest.toDateString()) lbl='Вчера';
-  else lbl=viewDate.toLocaleDateString('ru',{day:'numeric',month:'long'});
-  document.getElementById('dLbl').textContent=lbl;
-  document.getElementById('jHead').textContent=viewDate.toDateString()===today.toDateString()?'Дневник':lbl;
+// ============ JOURNAL ============
+async function loadEntries(){
+  let q=sb.from('entries').select('*,notes(*)').order('created_at',{ascending:false});
+  if(role==='viewer'){
+    q=q.eq('share_code',viewerCode);
+  } else {
+    q=q.eq('user_id',user.id);
+  }
+  const {data,error}=await q;
+  if(error){console.error(error);return[];}
+  return data||[];
 }
 
-function renderJ(){
-  const entries=getE();
-  const ds=viewDate.toDateString();
-  const day=entries.filter(e=>new Date(e.createdAt).toDateString()===ds);
-  const c=document.getElementById('jList');
-  if(!day.length){
-    if (role==='viewer' && entries.length===0) {
-      c.innerHTML=`<div class="empty"><span class="empty-big">✦</span>Записей пока нет<br><span style="font-size:12px;color:var(--ink-light);">Либо ссылка неверная, либо автор дневника ещё не сделал ни одной записи.</span></div>`;
-    } else {
-      c.innerHTML=`<div class="empty"><span class="empty-big">✦</span>${role==='owner'?'Записей за этот день нет.<br>Нажмите «+ Новая запись»':'Записей за этот день нет.'}</div>`;
-    }
+async function renderJ(){
+  const container=document.getElementById('jList');
+  container.innerHTML='<div class="gloading">Загрузка записей</div>';
+  const entries=await loadEntries();
+  entriesCache=entries;
+  if(!entries.length){
+    container.innerHTML=`<div class="empty"><span class="empty-big">✦</span>${role==='owner'?'Записей пока нет.<br>Нажмите «+ Новая запись»':'Записей пока нет.'}</div>`;
     return;
   }
-  c.innerHTML=day.map(e=>buildCard(e)).join('');
+  // group by date
+  const groups={};
+  entries.forEach(e=>{
+    const ds=new Date(e.created_at).toDateString();
+    if(!groups[ds]) groups[ds]=[];
+    groups[ds].push(e);
+  });
+  let html='';
+  const today=new Date().toDateString();
+  const yest=new Date(Date.now()-86400000).toDateString();
+  for(const ds of Object.keys(groups)){
+    let lbl;
+    if(ds===today) lbl='Сегодня';
+    else if(ds===yest) lbl='Вчера';
+    else lbl=new Date(ds).toLocaleDateString('ru',{day:'numeric',month:'long',year:'numeric'});
+    html+=`<div class="dgroup"><div class="dgroup-lbl">${lbl}</div>`;
+    html+=groups[ds].map(e=>buildCard(e)).join('');
+    html+=`</div>`;
+  }
+  container.innerHTML=html;
 }
 
 function buildCard(e){
-  const time=new Date(e.createdAt).toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});
-  const topNote=e.notes&&e.notes.length?e.notes[e.notes.length-1]:null;
+  const time=new Date(e.created_at).toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});
+  const allNotes=e.notes||[];
+  const generalNotes=allNotes.filter(n=>!n.section);
+  const topNote=allNotes.length?allNotes[allNotes.length-1]:null;
   const lc=topNote?`lc-${topNote.color}`:'';
   const dotStyle=topNote?`background:${nch(topNote.color)}`:'background:transparent';
 
-  const previewTags=(e.emotions||[]).slice(0,4).map(em=>`<span class="etag ${em.cat||''}">${x(em.name)}</span>`).join('');
+  const emotions=e.emotions||[];
+  const distortions=e.distortions||[];
+  const needs=e.needs||[];
+
+  const previewTags=emotions.slice(0,4).map(em=>`<span class="etag ${em.cat||''}">${x(em.name)}</span>`).join('');
 
   let emoH='';
-  if(e.emotions&&e.emotions.length){
+  if(emotions.length){
     emoH=`<div class="esec"><div class="eslbl">Эмоции</div><div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;">`;
-    emoH+=(e.emotions).map(em=>{
+    emoH+=emotions.map(em=>{
       const intBadge=em.intensity?`<span class="eint">${em.intensity}</span>`:'';
       return `<div class="emo-with-int ${em.cat||''}"><span class="ename">${x(em.name)}</span>${intBadge}</div>`;
     }).join('');
     emoH+=`</div></div>`;
   }
 
-  let body='';
-  if(e.situation) body+=sec('Ситуация',x(e.situation));
-  body+=emoH;
-  if(e.thoughts) body+=sec('Мысли и убеждения',x(e.thoughts));
-  if(e.distortions&&e.distortions.length) body+=`<div class="esec"><div class="eslbl">Искажения</div><div class="etagrow">${e.distortions.map(d=>`<span class="etag">${x(d)}</span>`).join('')}</div></div>`;
-  if(e.bodyReaction) body+=sec('Реакции тела и действия',x(e.bodyReaction));
-  if(e.needs&&e.needs.length) body+=`<div class="esec"><div class="eslbl">Потребности</div><div class="etagrow">${e.needs.map(n=>`<span class="etag">${x(n)}</span>`).join('')}${e.needsText?`<span class="etag">${x(e.needsText)}</span>`:''}</div></div>`;
-  else if(e.needsText) body+=sec('Потребности',x(e.needsText));
-  if(e.constructive) body+=`<div class="esec"><div class="eslbl">Конструктивные мысли</div><div class="esval-g">${x(e.constructive)}</div></div>`;
-  if(e.author) body+=`<div class="esec"><div class="eslbl">Поведение автора жизни</div><div class="esval-p">${x(e.author)}</div></div>`;
+  const secNotes=(section)=>{
+    const sn=allNotes.filter(n=>n.section===section);
+    if(!sn.length) return '';
+    return `<div class="sec-note-inline">${sn.map(n=>`<div class="nitem ${n.color}" style="margin-top:5px;"><div class="nauthor">Психолог</div>${x(n.text)}${role==='viewer'?`<button class="ndel" onclick="delNote('${n.id}','${e.id}');event.stopPropagation()">✕</button>`:''}</div>`).join('')}</div>`;
+  };
+  const secBtn=(section)=>{
+    if(role!=='viewer') return '';
+    return `<span class="sec-note-btn" onclick="toggleSecNote(event,'${e.id}','${section}')">💬</span>`;
+  };
+  const secForm=(section)=>{
+    if(role!=='viewer') return '';
+    return `<div class="sec-note-form" id="snf-${e.id}-${section}" style="display:none;">
+      <div class="crow">
+        <div class="cdot cy sel" onclick="selC(this,'${e.id}-${section}','yellow')"></div>
+        <div class="cdot cb" onclick="selC(this,'${e.id}-${section}','blue')"></div>
+        <div class="cdot cg" onclick="selC(this,'${e.id}-${section}','green')"></div>
+        <div class="cdot cp" onclick="selC(this,'${e.id}-${section}','pink')"></div>
+      </div>
+      <textarea class="nta" id="snt-${e.id}-${section}" rows="2" placeholder="Комментарий…"></textarea>
+      <button class="nsbmt" onclick="addNote('${e.id}','${section}');event.stopPropagation()">Добавить</button>
+    </div>`;
+  };
 
-  const notesH=buildNotesH(e);
+  let body='';
+  if(e.situation) body+=`<div class="esec"><div class="eslbl">Ситуация ${secBtn('situation')}</div><div class="esval">${x(e.situation)}</div>${secNotes('situation')}${secForm('situation')}</div>`;
+  body+=emoH;
+  if(e.thoughts) body+=`<div class="esec"><div class="eslbl">Мысли и убеждения ${secBtn('thoughts')}</div><div class="esval">${x(e.thoughts)}</div>${secNotes('thoughts')}${secForm('thoughts')}</div>`;
+  if(distortions.length) body+=`<div class="esec"><div class="eslbl">Искажения</div><div class="etagrow">${distortions.map(d=>`<span class="etag">${x(d)}</span>`).join('')}</div></div>`;
+  if(e.body_reaction) body+=`<div class="esec"><div class="eslbl">Реакции тела и действия ${secBtn('body')}</div><div class="esval">${x(e.body_reaction)}</div>${secNotes('body')}${secForm('body')}</div>`;
+  if(needs.length||e.needs_text){
+    body+=`<div class="esec"><div class="eslbl">Потребности ${secBtn('needs')}</div><div class="etagrow">${needs.map(n=>`<span class="etag">${x(n)}</span>`).join('')}</div>${e.needs_text?`<div class="esval" style="margin-top:6px;">${x(e.needs_text)}</div>`:''}${secNotes('needs')}${secForm('needs')}</div>`;
+  }
+  if(e.constructive) body+=`<div class="esec"><div class="eslbl">Конструктивные мысли ${secBtn('constructive')}</div><div class="esval-g">${x(e.constructive)}</div>${secNotes('constructive')}${secForm('constructive')}</div>`;
+  if(e.author) body+=`<div class="esec"><div class="eslbl">Поведение автора жизни ${secBtn('author')}</div><div class="esval-p">${x(e.author)}</div>${secNotes('author')}${secForm('author')}</div>`;
+
+  // general notes (without section)
+  const notesH=buildNotesH(e,generalNotes);
   let acts='';
   if(role==='owner') acts=`<div class="eacts">
     <button class="abtn" onclick="openEdit('${e.id}');event.stopPropagation()">✏️ Редактировать</button>
@@ -950,15 +908,16 @@ function nch(c){return{yellow:'#d4a800',blue:'#4a9de0',green:'#3aaa5a',pink:'#d0
 function x(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');}
 function togCard(id){document.getElementById('ec-'+id).classList.toggle('open');}
 
-function buildNotesH(e){
-  const notes=e.notes||[];
+function buildNotesH(e,generalNotes){
+  const notes=generalNotes||[];
   let h=`<div class="nsec">`;
   if(notes.length){
-    h+=`<div class="nhead">Комментарии психолога</div>`;
-    h+=notes.map((n,i)=>`<div class="nitem ${n.color}"><div class="nauthor">Психолог</div>${x(n.text)}${role==='viewer'?`<button class="ndel" onclick="delNote('${e.id}',${i});event.stopPropagation()">✕</button>`:''}</div>`).join('');
+    h+=`<div class="nhead">Общие комментарии</div>`;
+    h+=notes.map((n,i)=>`<div class="nitem ${n.color}"><div class="nauthor">Психолог</div>${x(n.text)}${role==='viewer'?`<button class="ndel" onclick="delNote('${n.id}','${e.id}');event.stopPropagation()">✕</button>`:''}</div>`).join('');
   }
   if(role==='viewer'){
     h+=`<div class="addnote">
+      <div style="font-size:11px;color:var(--ink-light);margin-bottom:6px;">Общий комментарий ко всей записи:</div>
       <div class="crow">
         <div class="cdot cy sel" onclick="selC(this,'${e.id}','yellow')"></div>
         <div class="cdot cb" onclick="selC(this,'${e.id}','blue')"></div>
@@ -966,64 +925,58 @@ function buildNotesH(e){
         <div class="cdot cp" onclick="selC(this,'${e.id}','pink')"></div>
       </div>
       <textarea class="nta" id="nt-${e.id}" rows="2" placeholder="Добавить комментарий…"></textarea>
-      <button class="nsbmt" onclick="addNote('${e.id}');event.stopPropagation()">Добавить</button>
+      <button class="nsbmt" onclick="addNote('${e.id}','');event.stopPropagation()">Добавить</button>
     </div>`;
   }
   return h+`</div>`;
 }
 
-function selC(dot,eid,color){
-  noteColorSel[eid]=color;
-  const card=document.getElementById('ec-'+eid);
-  if(card) card.querySelectorAll('.cdot').forEach(d=>d.classList.remove('sel'));
+function toggleSecNote(ev,eid,section){
+  ev.stopPropagation();
+  const form=document.getElementById('snf-'+eid+'-'+section);
+  if(form) form.style.display=form.style.display==='none'?'block':'none';
+}
+
+function selC(dot,key,color){
+  noteColorSel[key]=color;
+  // find parent and deselect siblings
+  const parent=dot.parentElement;
+  if(parent) parent.querySelectorAll('.cdot').forEach(d=>d.classList.remove('sel'));
   dot.classList.add('sel');
 }
 
-async function addNote(eid){
-  const ta=document.getElementById('nt-'+eid);
+async function addNote(eid,section){
+  let ta,colorKey;
+  if(section){
+    ta=document.getElementById('snt-'+eid+'-'+section);
+    colorKey=eid+'-'+section;
+  } else {
+    ta=document.getElementById('nt-'+eid);
+    colorKey=eid;
+  }
   const txt=ta?ta.value.trim():'';if(!txt) return;
-  const color=noteColorSel[eid]||'yellow';
-  const entry=entriesCache.find(e=>String(e.id)===String(eid));
-  if(!entry) return;
-
-  const { data, error } = await sb.from('notes').insert({
-    entry_id: entry.dbId,
-    text: txt,
-    color: color
-  }).select().single();
-
-  if (error) { alert('Не удалось добавить комментарий: '+error.message); return; }
-
-  if(!entry.notes) entry.notes=[];
-  entry.notes.push({ dbId: data.id, text: txt, color: color, ts: Date.now() });
-  ta.value='';
-  renderJ();
+  const color=noteColorSel[colorKey]||'yellow';
+  const insertData={entry_id:eid,text:txt,color};
+  if(section) insertData.section=section;
+  const {error}=await sb.from('notes').insert(insertData);
+  if(error){alert('Не удалось сохранить комментарий: '+error.message);return;}
+  await renderJ();
   setTimeout(()=>{const c=document.getElementById('ec-'+eid);if(c)c.classList.add('open');},50);
 }
 
-async function delNote(eid,idx){
+async function delNote(noteId,eid){
   if(!confirm('Удалить комментарий?')) return;
-  const entry=entriesCache.find(e=>String(e.id)===String(eid));
-  if(!entry||!entry.notes||!entry.notes[idx]) return;
-
-  const note = entry.notes[idx];
-  const { error } = await sb.from('notes').delete().eq('id', note.dbId);
-  if (error) { alert('Не удалось удалить: '+error.message); return; }
-
-  entry.notes.splice(idx,1);renderJ();
+  const {error}=await sb.from('notes').delete().eq('id',noteId);
+  if(error){alert('Не удалось удалить: '+error.message);return;}
+  await renderJ();
   setTimeout(()=>{const c=document.getElementById('ec-'+eid);if(c)c.classList.add('open');},50);
 }
 
 async function delEntry(id){
   if(!confirm('Удалить запись?')) return;
-  const entry=entriesCache.find(e=>String(e.id)===String(id));
-  if(!entry) return;
-
-  const { error } = await sb.from('entries').delete().eq('id', entry.dbId);
-  if (error) { alert('Не удалось удалить: '+error.message); return; }
-
-  entriesCache = entriesCache.filter(e=>String(e.id)!==String(id));
-  renderJ();
+  const {error}=await sb.from('entries').delete().eq('id',id);
+  if(error){alert('Не удалось удалить: '+error.message);return;}
+  await renderJ();
 }
 
 function openEdit(id){
@@ -1031,19 +984,16 @@ function openEdit(id){
   if(!entry) return;
   editId=id;
   document.getElementById('eSit').value=entry.situation||'';
-  document.getElementById('eBody').value=entry.bodyReaction||'';
+  document.getElementById('eBody').value=entry.body_reaction||'';
   document.getElementById('eTho').value=entry.thoughts||'';
-  document.getElementById('eNeed').value=entry.needsText||'';
+  document.getElementById('eNeed').value=entry.needs_text||'';
   document.getElementById('eCons').value=entry.constructive||'';
   document.getElementById('eAuth').value=entry.author||'';
   document.getElementById('mEdit').classList.add('open');
 }
 
 async function saveEdit(){
-  const entry=entriesCache.find(e=>String(e.id)===String(editId));
-  if(!entry) return;
-
-  const updates = {
+  const upd={
     situation:document.getElementById('eSit').value.trim(),
     body_reaction:document.getElementById('eBody').value.trim(),
     thoughts:document.getElementById('eTho').value.trim(),
@@ -1051,25 +1001,19 @@ async function saveEdit(){
     constructive:document.getElementById('eCons').value.trim(),
     author:document.getElementById('eAuth').value.trim(),
   };
-
-  const { error } = await sb.from('entries').update(updates).eq('id', entry.dbId);
-  if (error) { alert('Не удалось сохранить: '+error.message); return; }
-
-  // Обновляем локальный кэш
-  entry.situation = updates.situation;
-  entry.bodyReaction = updates.body_reaction;
-  entry.thoughts = updates.thoughts;
-  entry.needsText = updates.needs_text;
-  entry.constructive = updates.constructive;
-  entry.author = updates.author;
-
-  cm('mEdit');renderJ();
-  setTimeout(()=>{const c=document.getElementById('ec-'+editId);if(c)c.classList.add('open');},50);
+  const {error}=await sb.from('entries').update(upd).eq('id',editId);
+  if(error){alert('Не удалось сохранить: '+error.message);return;}
+  cm('mEdit');
+  const savedId=editId;
+  await renderJ();
+  setTimeout(()=>{const c=document.getElementById('ec-'+savedId);if(c)c.classList.add('open');},50);
 }
 
-// WRITE LOGIC
+// ============ WRITE ============
 function buildDists(){
-  document.getElementById('dList').innerHTML=DISTS.map((d,i)=>
+  const el=document.getElementById('dList');
+  if(!el) return;
+  el.innerHTML=DISTS.map((d,i)=>
     `<div class="ditem" id="di${i}" onclick="tD(${i})"><div class="dchk">✓</div>
     <div><div class="dname">${d.n}</div><div class="ddesc">${d.d}</div></div></div>`).join('');
 }
@@ -1148,6 +1092,7 @@ function tN(el){
   if(el.classList.contains('sel')){if(!selNeeds.includes(name))selNeeds.push(name);}
   else selNeeds=selNeeds.filter(n=>n!==name);
 }
+
 function tD(i){
   const item=document.getElementById('di'+i);item.classList.toggle('sel');
   const name=DISTS[i].n;
@@ -1165,6 +1110,7 @@ function gos(n){
   el.classList.add('vis');
   upProg();window.scrollTo({top:0,behavior:'smooth'});
 }
+
 function upProg(){
   for(let i=1;i<=7;i++){
     const e=document.getElementById('ps'+i);if(!e)continue;
@@ -1176,56 +1122,53 @@ function upProg(){
 }
 
 async function saveEntry(){
-  const newRow = {
-    user_id: currentUser.id,
-    share_code: shareCode,
-    situation: document.getElementById('fSit').value.trim(),
-    emotions: selEmos,
-    thoughts: document.getElementById('fTho').value.trim(),
-    distortions: selDists,
-    body_reaction: document.getElementById('fBody').value.trim(),
-    needs: selNeeds,
-    needs_text: document.getElementById('fNeed').value.trim(),
-    constructive: document.getElementById('fCons').value.trim(),
-    author: document.getElementById('fAuth').value.trim(),
+  if(!user){alert('Пожалуйста, войдите в аккаунт');return;}
+  const btn=document.getElementById('btnSave');
+  btn.disabled=true;btn.textContent='Сохраняю…';
+
+  const entryData={
+    user_id:user.id,
+    situation:document.getElementById('fSit').value.trim(),
+    emotions:selEmos,
+    thoughts:document.getElementById('fTho').value.trim(),
+    distortions:selDists,
+    body_reaction:document.getElementById('fBody').value.trim(),
+    needs:selNeeds,
+    needs_text:document.getElementById('fNeed').value.trim(),
+    constructive:document.getElementById('fCons').value.trim(),
+    author:document.getElementById('fAuth').value.trim(),
+    share_code:shareCode,
   };
 
-  const { data, error } = await sb.from('entries').insert(newRow).select().single();
-  if (error) { alert('Не удалось сохранить запись: '+error.message); return; }
+  const {data,error}=await sb.from('entries').insert(entryData).select().single();
+  btn.disabled=false;btn.textContent='Сохранить ✓';
+  if(error){alert('Не удалось сохранить: '+error.message);return;}
 
-  // Добавляем в кэш с notes: []
-  const entry = normalizeEntry({ ...data, notes: [] });
-  entriesCache.unshift(entry);
+  const entry=data;
 
   for(let i=1;i<=7;i++){const e=document.getElementById('s'+i);if(e)e.classList.remove('vis');}
   document.getElementById('sDone').classList.add('vis');
   document.getElementById('pLbl').textContent='Готово ✓';
   for(let i=1;i<=7;i++){const e=document.getElementById('ps'+i);if(e)e.className='ps done';}
 
+  const emotions=entry.emotions||[];
+  const distortions=entry.distortions||[];
+  const needs=entry.needs||[];
+
   document.getElementById('dSum').innerHTML=`
     ${entry.situation?`<div class="ds-lbl">Ситуация</div><div class="ds-val">${x(entry.situation)}</div>`:''}
-    ${entry.emotions.length?`<div class="ds-lbl">Эмоции</div><div class="ds-tags">${entry.emotions.map(e=>`<div class="emo-with-int ${e.cat}"><span class="ename">${e.name}</span>${e.intensity?`<span class="eint">${e.intensity}</span>`:''}</div>`).join('')}</div>`:''}
+    ${emotions.length?`<div class="ds-lbl">Эмоции</div><div class="ds-tags">${emotions.map(e=>`<div class="emo-with-int ${e.cat}"><span class="ename">${e.name}</span>${e.intensity?`<span class="eint">${e.intensity}</span>`:''}</div>`).join('')}</div>`:''}
     ${entry.thoughts?`<div class="ds-lbl">Мысли и убеждения</div><div class="ds-val">${x(entry.thoughts)}</div>`:''}
-    ${entry.distortions&&entry.distortions.length?`<div class="ds-lbl">Когнитивные искажения</div><div class="ds-tags">${entry.distortions.map(d=>`<span class="etag">${x(d)}</span>`).join('')}</div>`:''}
-    ${entry.bodyReaction?`<div class="ds-lbl">Реакции тела и действия</div><div class="ds-val">${x(entry.bodyReaction)}</div>`:''}
-    ${(entry.needs&&entry.needs.length)||entry.needsText?`<div class="ds-lbl">Потребности</div><div class="ds-tags">${(entry.needs||[]).map(n=>`<span class="etag">${x(n)}</span>`).join('')}${entry.needsText?`<div class="ds-val" style="margin-top:6px;">${x(entry.needsText)}</div>`:''}</div>`:''}
+    ${distortions.length?`<div class="ds-lbl">Когнитивные искажения</div><div class="ds-tags">${distortions.map(d=>`<span class="etag">${x(d)}</span>`).join('')}</div>`:''}
+    ${entry.body_reaction?`<div class="ds-lbl">Реакции тела и действия</div><div class="ds-val">${x(entry.body_reaction)}</div>`:''}
+    ${(needs.length||entry.needs_text)?`<div class="ds-lbl">Потребности</div><div class="ds-tags">${needs.map(n=>`<span class="etag">${x(n)}</span>`).join('')}${entry.needs_text?`<div class="ds-val" style="margin-top:6px;">${x(entry.needs_text)}</div>`:''}</div>`:''}
     ${entry.constructive?`<div class="ds-lbl">Конструктивные мысли</div><div class="ds-val g">${x(entry.constructive)}</div>`:''}
     ${entry.author?`<div class="ds-lbl">Поведение автора жизни</div><div class="ds-val p">${x(entry.author)}</div>`:''}
     <div style="margin-top:18px;padding:11px 14px;background:var(--bs);border-radius:9px;font-size:12px;color:#2a5070;line-height:1.6;border-left:3px solid var(--blue);">
       💡 Запись можно отредактировать в любой момент — откройте вкладку «Записи», нажмите на запись, а затем «✏️ Редактировать».
     </div>
-    <button class="btn bs" style="width:100%;margin-top:10px;padding:11px;" onclick="editJustSaved('${entry.id}')">✏️ Редактировать эту запись сейчас</button>
   `;
   window.scrollTo({top:0,behavior:'smooth'});
-}
-
-function editJustSaved(id){
-  switchTab('journal');
-  setTimeout(()=>{
-    const c=document.getElementById('ec-'+id);
-    if(c){c.classList.add('open');c.scrollIntoView({behavior:'smooth',block:'center'});}
-    openEdit(id);
-  },100);
 }
 
 function newEntry(){
@@ -1242,6 +1185,36 @@ function newEntry(){
   document.getElementById('sDone').classList.remove('vis');
   step=1;document.getElementById('s1').classList.add('vis');upProg();
   switchTab('write');
+}
+
+// ============ EXPORT ============
+async function exportEntries(){
+  const entries=await loadEntries();
+  if(!entries.length){alert('Нет записей для скачивания');return;}
+  const exported=entries.map(e=>{
+    const d=new Date(e.created_at);
+    return {
+      дата: d.toLocaleDateString('ru',{day:'numeric',month:'long',year:'numeric'}),
+      время: d.toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'}),
+      ситуация: e.situation||'',
+      эмоции: (e.emotions||[]).map(em=>`${em.name} (${em.intensity||'?'})`).join(', '),
+      мысли: e.thoughts||'',
+      искажения: (e.distortions||[]).join(', '),
+      тело_и_действия: e.body_reaction||'',
+      потребности: (e.needs||[]).join(', ')+(e.needs_text?' | '+e.needs_text:''),
+      конструктивные_мысли: e.constructive||'',
+      поведение_автора: e.author||'',
+      комментарии_психолога: (e.notes||[]).map(n=>n.text).join(' | ')
+    };
+  });
+  const json=JSON.stringify(exported,null,2);
+  const blob=new Blob([json],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=`kpt-dnevnik-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 </script>
 </body>
