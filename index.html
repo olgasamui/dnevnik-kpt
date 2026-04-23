@@ -620,6 +620,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
   if(urlShare){
     viewerCode=urlShare;
     role='viewer';
+    document.getElementById('mAuth').classList.remove('open');
     await startApp();
     return;
   }
@@ -628,6 +629,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
   if(session&&session.user){
     user=session.user;
     role='owner';
+    document.getElementById('mAuth').classList.remove('open');
     await startApp();
   } else {
     // show auth screen
