@@ -256,6 +256,14 @@ input::placeholder,textarea::placeholder{color:var(--ink-light);}
 /* PER-SECTION NOTE BUTTON */
 .sec-note-btn{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--aw);cursor:pointer;margin-left:8px;padding:2px 8px;border-radius:12px;border:1px solid var(--as);background:var(--paper);transition:all .15s;vertical-align:middle;font-family:'Mulish',sans-serif;font-weight:500;}
 .sec-note-btn:hover{background:var(--as);border-color:var(--aw);}
+
+/* PER-SECTION EDIT BUTTON */
+.sec-edit-btn{display:inline-flex;align-items:center;gap:3px;font-size:11px;color:var(--ink-light);cursor:pointer;margin-left:6px;padding:2px 7px;border-radius:10px;border:1px solid transparent;background:none;transition:all .15s;vertical-align:middle;font-family:'Mulish',sans-serif;}
+.sec-edit-btn:hover{color:var(--accent);border-color:var(--as);background:var(--bg);}
+.sec-edit-area{margin-top:6px;animation:fi .2s ease;}
+.sec-edit-ta{width:100%;border:1.5px solid var(--aw);border-radius:10px;padding:11px 14px;font-family:'Mulish',sans-serif;font-size:14px;font-weight:300;color:var(--ink);background:var(--paper);outline:none;resize:vertical;line-height:1.6;min-height:100px;box-sizing:border-box;}
+.sec-edit-btns{display:flex;gap:8px;margin-top:8px;}
+.sec-edit-btns .btn{font-size:12px;padding:7px 16px;}
 .sec-note-form{margin-top:8px;padding:10px;background:var(--bg);border-radius:10px;border:1px solid var(--as);animation:fi .2s ease;}
 .sec-note-inline{margin-top:5px;}
 </style>
@@ -566,6 +574,14 @@ input::placeholder,textarea::placeholder{color:var(--ink-light);}
       • Что я могу сделать, чтобы позаботиться о своей потребности?<br>
       • Что сделал бы человек, который любит себя и уважает других?
     </div>
+    <div class="tip tipp">
+      <strong>🧭 Вопросы для осознанного действия:</strong><br>
+      • Как обстоит реальность?<br>
+      • Какой другой человек?<br>
+      • Какой сейчас я?<br>
+      • Что необходимо сделать, чтобы удовлетворить свою потребность?<br>
+      • Поменять способ, действие.
+    </div>
     <div class="tip tipb">
       <strong>🎯 Действую только в своей зоне</strong><br>
       • Что я могу <em>сказать / сделать / попросить</em> из своей зоны ответственности?<br>
@@ -604,6 +620,7 @@ const DISTS=[
   {n:"Персонализация",d:"Всё принимать на свой счёт"},
   {n:"Сверхобобщение",d:"«Я всегда так», «Никогда не изменится»"},
   {n:"Эмоциональное мышление",d:"«Чувствую себя виноватой — значит виновата»"},
+  {n:"Проекция",d:"Мне кажется, что я точно знаю, что другой человек чувствует или думает обо мне. «Он меня осуждает» = я сама себя осуждаю. «Она считает меня слабой» = я сама считаю себя слабой"},
 ];
 
 let role=null;            // 'owner' | 'viewer'
@@ -897,23 +914,27 @@ function buildCard(e){
     </div>`;
   };
 
+  const secEditBtn=(field,dbField)=>{
+    if(role!=='owner') return '';
+    return `<span class="sec-edit-btn" onclick="startEditSec(event,'${e.id}','${dbField}')">✏️</span>`;
+  };
+
   let body='';
-  if(e.situation) body+=`<div class="esec"><div class="eslbl">Ситуация ${secBtn('situation')}</div><div class="esval">${x(e.situation)}</div>${secNotes('situation')}${secForm('situation')}</div>`;
+  if(e.situation) body+=`<div class="esec"><div class="eslbl">Ситуация ${secEditBtn('situation','situation')} ${secBtn('situation')}</div><div class="esval" id="sv-${e.id}-situation">${x(e.situation)}</div>${secNotes('situation')}${secForm('situation')}</div>`;
   body+=emoH;
-  if(e.thoughts) body+=`<div class="esec"><div class="eslbl">Мысли и убеждения ${secBtn('thoughts')}</div><div class="esval">${x(e.thoughts)}</div>${secNotes('thoughts')}${secForm('thoughts')}</div>`;
+  if(e.thoughts) body+=`<div class="esec"><div class="eslbl">Мысли и убеждения ${secEditBtn('thoughts','thoughts')} ${secBtn('thoughts')}</div><div class="esval" id="sv-${e.id}-thoughts">${x(e.thoughts)}</div>${secNotes('thoughts')}${secForm('thoughts')}</div>`;
   if(distortions.length) body+=`<div class="esec"><div class="eslbl">Искажения</div><div class="etagrow">${distortions.map(d=>`<span class="etag">${x(d)}</span>`).join('')}</div></div>`;
-  if(e.body_reaction) body+=`<div class="esec"><div class="eslbl">Реакции тела и действия ${secBtn('body')}</div><div class="esval">${x(e.body_reaction)}</div>${secNotes('body')}${secForm('body')}</div>`;
+  if(e.body_reaction) body+=`<div class="esec"><div class="eslbl">Реакции тела и действия ${secEditBtn('body','body_reaction')} ${secBtn('body')}</div><div class="esval" id="sv-${e.id}-body_reaction">${x(e.body_reaction)}</div>${secNotes('body')}${secForm('body')}</div>`;
   if(needs.length||e.needs_text){
-    body+=`<div class="esec"><div class="eslbl">Потребности ${secBtn('needs')}</div><div class="etagrow">${needs.map(n=>`<span class="etag">${x(n)}</span>`).join('')}</div>${e.needs_text?`<div class="esval" style="margin-top:6px;">${x(e.needs_text)}</div>`:''}${secNotes('needs')}${secForm('needs')}</div>`;
+    body+=`<div class="esec"><div class="eslbl">Потребности ${secEditBtn('needs','needs_text')} ${secBtn('needs')}</div><div class="etagrow">${needs.map(n=>`<span class="etag">${x(n)}</span>`).join('')}</div>${e.needs_text?`<div class="esval" id="sv-${e.id}-needs_text" style="margin-top:6px;">${x(e.needs_text)}</div>`:''}${secNotes('needs')}${secForm('needs')}</div>`;
   }
-  if(e.constructive) body+=`<div class="esec"><div class="eslbl">Конструктивные мысли ${secBtn('constructive')}</div><div class="esval-g">${x(e.constructive)}</div>${secNotes('constructive')}${secForm('constructive')}</div>`;
-  if(e.author) body+=`<div class="esec"><div class="eslbl">Поведение автора жизни ${secBtn('author')}</div><div class="esval-g">${x(e.author)}</div>${secNotes('author')}${secForm('author')}</div>`;
+  if(e.constructive) body+=`<div class="esec"><div class="eslbl">Конструктивные мысли ${secEditBtn('constructive','constructive')} ${secBtn('constructive')}</div><div class="esval-g" id="sv-${e.id}-constructive">${x(e.constructive)}</div>${secNotes('constructive')}${secForm('constructive')}</div>`;
+  if(e.author) body+=`<div class="esec"><div class="eslbl">Поведение автора жизни ${secEditBtn('author','author')} ${secBtn('author')}</div><div class="esval-g" id="sv-${e.id}-author">${x(e.author)}</div>${secNotes('author')}${secForm('author')}</div>`;
 
   // general notes (without section)
   const notesH=buildNotesH(e,generalNotes);
   let acts='';
   if(role==='owner') acts=`<div class="eacts">
-    <button class="abtn" onclick="openEdit('${e.id}');event.stopPropagation()">✏️ Редактировать</button>
     <button class="abtn del" onclick="delEntry('${e.id}');event.stopPropagation()">Удалить</button>
   </div>`;
 
@@ -1007,34 +1028,45 @@ async function delEntry(id){
   await renderJ();
 }
 
-function openEdit(id){
-  const entry=entriesCache.find(e=>String(e.id)===String(id));
+function startEditSec(ev,entryId,dbField){
+  ev.stopPropagation();
+  const valEl=document.getElementById('sv-'+entryId+'-'+dbField);
+  if(!valEl) return;
+  const entry=entriesCache.find(e=>String(e.id)===String(entryId));
   if(!entry) return;
-  editId=id;
-  document.getElementById('eSit').value=entry.situation||'';
-  document.getElementById('eBody').value=entry.body_reaction||'';
-  document.getElementById('eTho').value=entry.thoughts||'';
-  document.getElementById('eNeed').value=entry.needs_text||'';
-  document.getElementById('eCons').value=entry.constructive||'';
-  document.getElementById('eAuth').value=entry.author||'';
-  document.getElementById('mEdit').classList.add('open');
+  const currentText=entry[dbField]||'';
+  const origHTML=valEl.innerHTML;
+  const origClass=valEl.className;
+  valEl.className='sec-edit-area';
+  valEl.innerHTML=`<textarea class="sec-edit-ta" id="seta-${entryId}-${dbField}" rows="6">${currentText.replace(/</g,'&lt;')}</textarea>
+    <div class="sec-edit-btns">
+      <button class="btn bp" onclick="saveEditSec(event,'${entryId}','${dbField}')">Сохранить</button>
+      <button class="btn bs" onclick="cancelEditSec(event,'${entryId}','${dbField}','${origClass}')">Отмена</button>
+    </div>`;
+  const ta=document.getElementById('seta-'+entryId+'-'+dbField);
+  if(ta){ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length);}
 }
 
-async function saveEdit(){
-  const upd={
-    situation:document.getElementById('eSit').value.trim(),
-    body_reaction:document.getElementById('eBody').value.trim(),
-    thoughts:document.getElementById('eTho').value.trim(),
-    needs_text:document.getElementById('eNeed').value.trim(),
-    constructive:document.getElementById('eCons').value.trim(),
-    author:document.getElementById('eAuth').value.trim(),
-  };
-  const {error}=await sb.from('entries').update(upd).eq('id',editId);
+async function saveEditSec(ev,entryId,dbField){
+  ev.stopPropagation();
+  const ta=document.getElementById('seta-'+entryId+'-'+dbField);
+  if(!ta) return;
+  const newVal=ta.value.trim();
+  const upd={};upd[dbField]=newVal;
+  const {error}=await sb.from('entries').update(upd).eq('id',entryId);
   if(error){alert('Не удалось сохранить: '+error.message);return;}
-  cm('mEdit');
-  const savedId=editId;
   await renderJ();
-  setTimeout(()=>{const c=document.getElementById('ec-'+savedId);if(c)c.classList.add('open');},50);
+  setTimeout(()=>{const c=document.getElementById('ec-'+entryId);if(c)c.classList.add('open');},50);
+}
+
+function cancelEditSec(ev,entryId,dbField,origClass){
+  ev.stopPropagation();
+  const entry=entriesCache.find(e=>String(e.id)===String(entryId));
+  if(!entry) return;
+  const valEl=document.getElementById('sv-'+entryId+'-'+dbField);
+  if(!valEl) return;
+  valEl.className=origClass;
+  valEl.innerHTML=x(entry[dbField]||'');
 }
 
 // ============ WRITE ============
