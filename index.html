@@ -1249,11 +1249,14 @@ function newEntry(){
 
 // ============ EXPORT ============
 async function exportEntries(){
-  const entries=await loadEntries();
-  if(!entries.length){alert('Нет записей для скачивания');return;}
+  // Admin gets ALL entries, not just their own
+  const {data:entries,error}=await sb.from('entries').select('*,notes(*)').order('created_at',{ascending:false});
+  if(error){alert('Ошибка: '+error.message);return;}
+  if(!entries||!entries.length){alert('Нет записей для скачивания');return;}
   const exported=entries.map(e=>{
     const d=new Date(e.created_at);
     return {
+      user_id: e.user_id,
       дата: d.toLocaleDateString('ru',{day:'numeric',month:'long',year:'numeric'}),
       время: d.toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'}),
       ситуация: e.situation||'',
