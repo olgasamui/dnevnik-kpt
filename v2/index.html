@@ -54,6 +54,9 @@ input::placeholder,textarea::placeholder{color:var(--ink-light);}
 .hbtn{font-family:'Mulish',sans-serif;font-size:12px;font-weight:500;color:var(--ink-soft);background:none;border:1px solid var(--as);padding:6px 12px;border-radius:20px;cursor:pointer;transition:all .2s;white-space:nowrap;}
 .hbtn:hover{background:var(--as);color:var(--accent);}
 .hright{display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
+.hmail{font-size:12px;color:var(--ink-light);max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+@media(max-width:620px){.hmail{display:none;}}
+.acctbox{background:var(--bg);border:1.5px solid var(--as);border-radius:10px;padding:11px 14px;font-size:14px;color:var(--ink);word-break:break-all;}
 
 .tabs{background:var(--paper);border-bottom:1px solid var(--as);display:flex;padding:0 18px;}
 .tab{font-size:13px;font-weight:500;color:var(--ink-light);padding:10px 14px;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;}
@@ -732,7 +735,8 @@ async function startApp(){
   document.getElementById('mainWrap').style.display='block';
   document.getElementById('t-clients').style.display=isPsy()?'block':'none';
   document.getElementById('hRight').innerHTML=
-    `<button class="hbtn" onclick="openSettings()">Настройки</button>
+    `<span class="hmail" title="${x(user.email)}">${x(user.email)}</span>
+     <button class="hbtn" onclick="openSettings()">Настройки</button>
      <button class="hbtn" onclick="logout()">Выйти</button>`;
   buildDists();
   updateBadge();
@@ -763,6 +767,17 @@ async function openSettings(){
   await loadProfile();
   const el=document.getElementById('setBody');
   let h='';
+
+  // --- аккаунт ---
+  h+=`<label>Вы вошли как</label>
+      <div class="acctbox">${x(user.email)}</div>
+
+      <label>Сменить пароль</label>
+      <input type="password" id="chPass" placeholder="новый пароль, минимум 8 символов" autocomplete="new-password">
+      <div class="ferr" id="chErr"></div>
+      <div class="fok" id="chOk"></div>
+      <div class="brow"><button class="btn bs" onclick="changePassword()">Сохранить новый пароль</button></div>
+      <hr style="border:none;border-top:1px solid var(--as);margin:20px 0;">`;
 
   if(isPsy()){
     h+=`<label>Ваш код для клиентов</label>
@@ -800,6 +815,18 @@ async function openSettings(){
 
   el.innerHTML=h;
   document.getElementById('mSettings').classList.add('open');
+}
+
+async function changePassword(){
+  const p=document.getElementById('chPass').value;
+  const err=document.getElementById('chErr'), ok=document.getElementById('chOk');
+  err.classList.remove('show'); ok.classList.remove('show');
+  if(p.length<8){err.textContent='Минимум 8 символов';err.classList.add('show');return;}
+  const {error}=await sb.auth.updateUser({password:p});
+  if(error){err.textContent='Ошибка: '+error.message;err.classList.add('show');return;}
+  document.getElementById('chPass').value='';
+  ok.textContent='✓ Пароль изменён. В следующий раз входите с новым.';
+  ok.classList.add('show');
 }
 
 async function linkPsy(){
