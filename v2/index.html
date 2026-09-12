@@ -250,6 +250,10 @@ input::placeholder,textarea::placeholder{color:var(--ink-light);}
 .codeval{font-family:'Cormorant Garamond',serif;font-size:32px;letter-spacing:.16em;color:var(--accent);font-weight:500;}
 .limitbar{font-size:12px;color:var(--ink-light);margin-bottom:16px;line-height:1.6;}
 .warnbox{background:#fff9f5;border-left:3px solid var(--aw);border-radius:0 9px 9px 0;padding:11px 14px;font-size:13px;color:var(--ink-soft);line-height:1.6;margin-bottom:10px;}
+.warnbox.hard{background:var(--errs);border-left-color:var(--err);color:#7a3030;}
+.ccard.locked{opacity:.62;background:var(--bg);}
+.clocked{font-size:11px;color:var(--ink-light);margin-top:3px;}
+.ckept{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:3px 9px;border-radius:12px;background:var(--gs);color:#3a6a4a;}
 
 @media(max-width:500px){.card{padding:18px 14px;}.ctitle{font-size:20px;}.main{padding:16px 12px 60px;}.header{padding:11px 13px;}}
 </style>
@@ -904,9 +908,12 @@ async function renderClients(){
   await loadProfile();
 
   const {data,error}=await sb.from('profiles')
-    .select('id,email,psychologist_status')
+    .select('id,email,psychologist_status,created_at')
     .eq('psychologist_id',user.id);
   if(error){el.innerHTML='<div class="empty">Ошибка загрузки</div>';return;}
+
+  const keptId = profile.kept_client_id;
+  const canChoose = !profile.kept_changed_at;   // выбор ещё не сделан?
 
   const {data:labels}=await sb.from('client_labels')
     .select('client_id,label').eq('psychologist_id',user.id);
@@ -923,18 +930,45 @@ async function renderClients(){
   const dd=until?until.toLocaleDateString('ru',{day:'numeric',month:'long'}):'';
   const daysLeft=until?Math.ceil((until-new Date())/86400000):0;
 
+  // отсрочка: 5 дней после окончания оплаты доступ сохраняется
+  const graceEnd = until ? new Date(until.getTime()+5*86400000) : null;
+  const inGrace  = !paid && graceEnd && graceEnd>new Date();
+  const graceLeft= graceEnd?Math.ceil((graceEnd-new Date())/86400000):0;
+  const fullAccess = paid || inGrace;
+
   let bar=`Подтверждённых клиентов: <strong>${active} из ${limit}</strong>. `;
   if(paid && isTrial){
     bar+=`Пробный период до ${dd}.`;
-    if(daysLeft<=5) bar=`<div class="warnbox">Пробный период заканчивается через ${daysLeft} ${plural(daysLeft,'день','дня','дней')}, ${dd}. После этого останется один клиент — остальные сохранятся, но станут недоступны, пока не подключите тариф.</div>`+bar;
+    if(daysLeft<=5) bar=`<div class="warnbox">
+      Пробный период заканчивается через ${daysLeft} ${plural(daysLeft,'день','дня','дней')}, ${dd}.
+      Дальше будет ещё 5 дней на оплату, а потом доступным останется
+      один клиент — остальные сохранятся и вернутся сразу после оплаты.</div>`+bar;
   } else if(paid){
     bar+=`Тариф активен до ${dd}.`;
-  } else if(isTrial){
-    bar=`<div class="warnbox">Пробный период закончился. Сейчас доступен один клиент. Записи остальных сохранены — они вернутся, как только подключите тариф.</div>`+bar;
+  } else if(inGrace){
+    bar=`<div class="warnbox hard">
+      Оплата не поступила. Доступ ко всем клиентам сохраняется ещё
+      ${graceLeft} ${plural(graceLeft,'день','дня','дней')}. После этого доступным
+      останется один клиент.${canChoose
+        ? ' Ниже можно выбрать, какой — выбор делается один раз.'
+        : ' Выбор сделан.'}
+      Записи остальных никуда не денутся и вернутся сразу после оплаты.
+      Новых клиентов принимать пока нельзя.</div>`+bar;
+  } else if(until){
+    bar=`<div class="warnbox hard">
+      Доступ ограничен: открыт один клиент. Записи остальных сохранены
+      и вернутся сразу после оплаты.${canChoose
+        ?' Если нужен другой — можно заменить, один раз.'
+        :' Выбор уже сделан.'}</div>`+bar;
   } else {
     bar+='Бесплатный тариф — один клиент. Подключите тариф, чтобы вести до десяти.';
   }
   document.getElementById('limitBar').innerHTML=bar;
+
+  // какой клиент остаётся доступным без оплаты
+  const activeList=clients.filter(c=>c.psychologist_status==='active');
+  const effKept = keptId || (activeList.length?activeList
+      .slice().sort((a,b)=>new Date(a.created_at||0)-new Date(b.created_at||0))[0].id : null);
 
   if(!clients.length){
     el.innerHTML=`<div class="empty"><span class="empty-big">✦</span>Клиентов пока нет.<br>Передайте свой код из настроек.</div>`;
@@ -946,20 +980,37 @@ async function renderClients(){
     const name=c.label
       ? `<div class="clabel">${x(c.label)}</div>`
       : `<div class="clabel empty-label">без подписи</div>`;
+    const locked = !pend && !fullAccess && c.id!==effKept;
+    const isKept = !pend && !paid && c.id===effKept;
+    // выбрать можно только когда оплата кончилась и выбор ещё не сделан
+    const showChoose = !pend && !paid && canChoose && c.id!==effKept;
+
     let acts='';
     if(pend){
       acts=`<button class="abtn" onclick="acceptClient('${c.id}')">Принять</button>
             <button class="abtn del" onclick="declineClient('${c.id}')">Отклонить</button>`;
     } else {
-      acts=`<button class="abtn" onclick="openClient('${c.id}')">Открыть дневник</button>
-            <button class="abtn" onclick="openLabel('${c.id}')">Настройки</button>`;
+      acts = (locked?'':`<button class="abtn" onclick="openClient('${c.id}')">Открыть дневник</button>`)
+           + (showChoose?`<button class="abtn" onclick="setKept('${c.id}')">Оставить этого</button>`:'')
+           + `<button class="abtn" onclick="openLabel('${c.id}')">Настройки</button>`;
     }
-    return `<div class="ccard ${pend?'pending':''}">
-      <div class="cinfo">${name}<div class="cmail">${x(c.email)}</div></div>
+    return `<div class="ccard ${pend?'pending':''} ${locked?'locked':''}">
+      <div class="cinfo">${name}<div class="cmail">${x(c.email)}</div>
+        ${locked?'<div class="clocked">Записи сохранены, доступ вернётся после оплаты</div>':''}</div>
       ${pend?'<span class="cstatus">заявка</span>':''}
+      ${isKept?`<span class="ckept">${fullAccess?'останется':'доступен'}</span>`:''}
       <div class="cacts">${acts}</div>
     </div>`;
   }).join('');
+}
+
+async function setKept(id){
+  const c=clients.find(x=>x.id===id);
+  const who=c?(c.label||c.email):'этого клиента';
+  if(!confirm('Оставить доступным '+who+'?\n\nЭто решение принимается один раз — поменять его потом будет нельзя.\n\nДоступ к остальным клиентам закроется до оплаты, их записи сохранятся.')) return;
+  const {error}=await sb.rpc('set_kept_client',{p_client:id});
+  if(error){alert(error.message);return;}
+  renderClients();
 }
 
 async function acceptClient(id){
