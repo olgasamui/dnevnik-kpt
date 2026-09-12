@@ -249,6 +249,7 @@ input::placeholder,textarea::placeholder{color:var(--ink-light);}
 .codebox{background:var(--bg);border:1.5px dashed var(--as);border-radius:12px;padding:16px;text-align:center;margin:12px 0;}
 .codeval{font-family:'Cormorant Garamond',serif;font-size:32px;letter-spacing:.16em;color:var(--accent);font-weight:500;}
 .limitbar{font-size:12px;color:var(--ink-light);margin-bottom:16px;line-height:1.6;}
+.warnbox{background:#fff9f5;border-left:3px solid var(--aw);border-radius:0 9px 9px 0;padding:11px 14px;font-size:13px;color:var(--ink-soft);line-height:1.6;margin-bottom:10px;}
 
 @media(max-width:500px){.card{padding:18px 14px;}.ctitle{font-size:20px;}.main{padding:16px 12px 60px;}.header{padding:11px 13px;}}
 </style>
@@ -671,6 +672,14 @@ document.addEventListener('DOMContentLoaded',async()=>{
 // ============================================================
 //  ВХОД И РЕГИСТРАЦИЯ
 // ============================================================
+function plural(n,one,few,many){
+  const a=Math.abs(n)%100, b=a%10;
+  if(a>10&&a<20) return many;
+  if(b>1&&b<5) return few;
+  if(b===1) return one;
+  return many;
+}
+
 function togglePass(id,btn){
   const f=document.getElementById(id);
   if(!f) return;
@@ -907,11 +916,25 @@ async function renderClients(){
   clients.sort((a,b)=>(a.psychologist_status==='pending'?0:1)-(b.psychologist_status==='pending'?0:1));
 
   const active=clients.filter(c=>c.psychologist_status==='active').length;
-  const paid=profile.paid_until&&new Date(profile.paid_until)>new Date();
+  const until=profile.paid_until?new Date(profile.paid_until):null;
+  const paid=until&&until>new Date();
   const limit=paid?10:1;
-  document.getElementById('limitBar').innerHTML=
-    `Подтверждённых клиентов: <strong>${active} из ${limit}</strong>. `+
-    (paid?'Тариф активен.':'Бесплатный тариф — один клиент. Подключите тариф, чтобы вести до десяти.');
+  const isTrial=profile.plan==='trial';
+  const dd=until?until.toLocaleDateString('ru',{day:'numeric',month:'long'}):'';
+  const daysLeft=until?Math.ceil((until-new Date())/86400000):0;
+
+  let bar=`Подтверждённых клиентов: <strong>${active} из ${limit}</strong>. `;
+  if(paid && isTrial){
+    bar+=`Пробный период до ${dd}.`;
+    if(daysLeft<=5) bar=`<div class="warnbox">Пробный период заканчивается через ${daysLeft} ${plural(daysLeft,'день','дня','дней')}, ${dd}. После этого останется один клиент — остальные сохранятся, но станут недоступны, пока не подключите тариф.</div>`+bar;
+  } else if(paid){
+    bar+=`Тариф активен до ${dd}.`;
+  } else if(isTrial){
+    bar=`<div class="warnbox">Пробный период закончился. Сейчас доступен один клиент. Записи остальных сохранены — они вернутся, как только подключите тариф.</div>`+bar;
+  } else {
+    bar+='Бесплатный тариф — один клиент. Подключите тариф, чтобы вести до десяти.';
+  }
+  document.getElementById('limitBar').innerHTML=bar;
 
   if(!clients.length){
     el.innerHTML=`<div class="empty"><span class="empty-big">✦</span>Клиентов пока нет.<br>Передайте свой код из настроек.</div>`;
