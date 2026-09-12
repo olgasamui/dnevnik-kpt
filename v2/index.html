@@ -57,6 +57,15 @@ input::placeholder,textarea::placeholder{color:var(--ink-light);}
 .hmail{font-size:12px;color:var(--ink-light);max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 @media(max-width:620px){.hmail{display:none;}}
 .acctbox{background:var(--bg);border:1.5px solid var(--as);border-radius:10px;padding:11px 14px;font-size:14px;color:var(--ink);word-break:break-all;}
+.pfield{position:relative;}
+.pfield input{padding-right:86px;}
+.peye{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;font-family:'Mulish',sans-serif;font-size:12px;font-weight:600;color:var(--aw);cursor:pointer;padding:5px 8px;border-radius:8px;}
+.peye:hover{background:var(--as);}
+.danger-zone{margin-top:22px;padding-top:18px;border-top:1px solid var(--as);}
+.danger-lbl{font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:#a05050;margin-bottom:6px;}
+.danger-txt{font-size:12px;color:var(--ink-light);line-height:1.6;margin-bottom:12px;}
+.bdanger{width:100%;background:none;border:1.5px solid #f0d8d8;color:#a05050;font-family:'Mulish',sans-serif;font-size:14px;font-weight:500;padding:11px 20px;border-radius:10px;cursor:pointer;transition:all .2s;}
+.bdanger:hover{background:#f5e8e8;}
 
 .tabs{background:var(--paper);border-bottom:1px solid var(--as);display:flex;padding:0 18px;}
 .tab{font-size:13px;font-weight:500;color:var(--ink-light);padding:10px 14px;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;}
@@ -257,7 +266,10 @@ input::placeholder,textarea::placeholder{color:var(--ink-light);}
   <label>Email</label>
   <input type="email" id="aEmail" placeholder="your@email.com" autocomplete="email">
   <label>Пароль</label>
-  <input type="password" id="aPass" placeholder="минимум 8 символов" autocomplete="current-password">
+  <div class="pfield">
+    <input type="password" id="aPass" placeholder="минимум 8 символов" autocomplete="current-password">
+    <button type="button" class="peye" onclick="togglePass('aPass',this)">Показать</button>
+  </div>
   <div class="ferr" id="authErr"></div>
   <div class="fok" id="authOk"></div>
   <button class="btn bp" id="authBtn" style="width:100%;padding:13px;margin-top:16px;" onclick="doAuth()">Войти</button>
@@ -276,7 +288,10 @@ input::placeholder,textarea::placeholder{color:var(--ink-light);}
   <div class="mtitle">Новый пароль</div>
   <div class="msub">Придумайте новый пароль для входа.</div>
   <label>Новый пароль</label>
-  <input type="password" id="npPass" placeholder="минимум 8 символов" autocomplete="new-password">
+  <div class="pfield">
+    <input type="password" id="npPass" placeholder="минимум 8 символов" autocomplete="new-password">
+    <button type="button" class="peye" onclick="togglePass('npPass',this)">Показать</button>
+  </div>
   <div class="ferr" id="npErr"></div>
   <div class="brow"><button class="btn bp" onclick="setNewPassword()">Сохранить</button></div>
 </div>
@@ -291,17 +306,30 @@ input::placeholder,textarea::placeholder{color:var(--ink-light);}
 </div>
 </div>
 
-<!-- ПОДПИСЬ КЛИЕНТА -->
+<!-- НАСТРОЙКИ КЛИЕНТА -->
 <div class="overlay" id="mLabel">
 <div class="modal">
   <button class="mclose" onclick="cm('mLabel')">✕</button>
-  <div class="mtitle">Как вам удобнее записать этого клиента?</div>
-  <div class="msub">Он не видит, как записан у вас.</div>
+  <div class="mtitle">Настройки клиента</div>
+  <div class="msub" id="clientMail"></div>
+
+  <label>Как вам удобнее записать этого клиента?</label>
+  <p style="font-size:12px;color:var(--ink-light);margin:-2px 0 7px;line-height:1.6;">Он не видит, как записан у вас.</p>
   <input type="text" id="labelInput" maxlength="60">
   <div class="ferr" id="labelErr"></div>
   <div class="brow">
-    <button class="btn bs" onclick="cm('mLabel')">Отмена</button>
-    <button class="btn bp" onclick="saveLabel()">Сохранить</button>
+    <button class="btn bs" onclick="cm('mLabel')">Закрыть</button>
+    <button class="btn bp" onclick="saveLabel()">Сохранить подпись</button>
+  </div>
+
+  <div class="danger-zone">
+    <div class="danger-lbl">Завершение работы</div>
+    <div class="danger-txt">
+      Вы перестанете видеть записи этого клиента, место в тарифе освободится.
+      У самого клиента всё сохранится — дневник продолжит работать, как раньше.
+      Если он подключится снова, ваша подпись останется на месте.
+    </div>
+    <button class="bdanger" onclick="removeClientFromModal()">Завершить работу с клиентом</button>
   </div>
 </div>
 </div>
@@ -642,6 +670,14 @@ document.addEventListener('DOMContentLoaded',async()=>{
 // ============================================================
 //  ВХОД И РЕГИСТРАЦИЯ
 // ============================================================
+function togglePass(id,btn){
+  const f=document.getElementById(id);
+  if(!f) return;
+  const show = f.type==='password';
+  f.type = show ? 'text' : 'password';
+  btn.textContent = show ? 'Скрыть' : 'Показать';
+}
+
 function switchAuth(mode){
   authMode=mode;
   document.getElementById('atLog').classList.toggle('act',mode==='log');
@@ -773,7 +809,10 @@ async function openSettings(){
       <div class="acctbox">${x(user.email)}</div>
 
       <label>Сменить пароль</label>
-      <input type="password" id="chPass" placeholder="новый пароль, минимум 8 символов" autocomplete="new-password">
+      <div class="pfield">
+        <input type="password" id="chPass" placeholder="новый пароль, минимум 8 символов" autocomplete="new-password">
+        <button type="button" class="peye" onclick="togglePass('chPass',this)">Показать</button>
+      </div>
       <div class="ferr" id="chErr"></div>
       <div class="fok" id="chOk"></div>
       <div class="brow"><button class="btn bs" onclick="changePassword()">Сохранить новый пароль</button></div>
@@ -895,8 +934,7 @@ async function renderClients(){
             <button class="abtn del" onclick="declineClient('${c.id}')">Отклонить</button>`;
     } else {
       acts=`<button class="abtn" onclick="openClient('${c.id}')">Открыть дневник</button>
-            <button class="abtn" onclick="openLabel('${c.id}')">Подпись</button>
-            <button class="abtn del" onclick="removeClient('${c.id}')">Завершить</button>`;
+            <button class="abtn" onclick="openLabel('${c.id}')">Настройки</button>`;
     }
     return `<div class="ccard ${pend?'pending':''}">
       <div class="cinfo">${name}<div class="cmail">${x(c.email)}</div></div>
@@ -917,20 +955,27 @@ async function declineClient(id){
   if(error){alert(error.message);return;}
   renderClients();
 }
-async function removeClient(id){
-  if(!confirm('Завершить работу с клиентом? Вы потеряете доступ к его записям, у него всё сохранится.')) return;
-  const {error}=await sb.rpc('remove_client',{p_client:id});
-  if(error){alert(error.message);return;}
-  renderClients();
-}
 
 function openLabel(id){
   labelClientId=id;
   const c=clients.find(x=>x.id===id);
   document.getElementById('labelInput').value=c?c.label:'';
+  document.getElementById('clientMail').textContent=c?c.email:'';
   document.getElementById('labelErr').classList.remove('show');
   document.getElementById('mLabel').classList.add('open');
   setTimeout(()=>document.getElementById('labelInput').focus(),100);
+}
+
+// Завершение работы из окна настроек клиента.
+// Двойное подтверждение: случайно нажать почти невозможно.
+async function removeClientFromModal(){
+  const c=clients.find(x=>x.id===labelClientId);
+  const who=c?(c.label||c.email):'этим клиентом';
+  if(!confirm('Завершить работу с '+who+'?\n\nВы перестанете видеть его записи. У клиента всё сохранится.')) return;
+  const {error}=await sb.rpc('remove_client',{p_client:labelClientId});
+  if(error){alert(error.message);return;}
+  cm('mLabel');
+  renderClients();
 }
 
 async function saveLabel(){
