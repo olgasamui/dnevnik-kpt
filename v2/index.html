@@ -827,10 +827,7 @@ async function openSettings(){
           Передайте этот код клиенту. Он введёт его у себя в настройках, и вам придёт заявка.
           Пока вы не подтвердите заявку, его записи вам не видны.
         </p>
-        <div class="brow"><button class="btn bs" onclick="regenCode()">Сменить код</button></div>
-        <p style="font-size:12px;color:var(--ink-light);margin-top:8px;line-height:1.6;">
-          После смены старый код перестаёт работать. Уже подтверждённые клиенты остаются.
-        </p>`;
+`;
   }
 
   const myHead = isPsy() ? 'Мой собственный психолог' : 'Мой психолог';
@@ -885,13 +882,6 @@ async function linkPsy(){
 async function unlinkPsy(){
   if(!confirm('Отключить психолога? Ваши записи останутся у вас.')) return;
   const {error}=await sb.rpc('unlink_psychologist');
-  if(error){alert('Ошибка: '+error.message);return;}
-  await openSettings();
-}
-
-async function regenCode(){
-  if(!confirm('Сменить код? Старый сразу перестанет работать.')) return;
-  const {error}=await sb.rpc('regenerate_access_code');
   if(error){alert('Ошибка: '+error.message);return;}
   await openSettings();
 }
