@@ -61,6 +61,7 @@ input::placeholder,textarea::placeholder{color:var(--ink-light);}
 .pfield input{padding-right:86px;}
 .peye{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;font-family:'Mulish',sans-serif;font-size:12px;font-weight:600;color:var(--aw);cursor:pointer;padding:5px 8px;border-radius:8px;}
 .peye:hover{background:var(--as);}
+.sect-head{font-family:'Cormorant Garamond',serif;font-size:19px;color:var(--accent);margin:26px 0 12px;padding-top:20px;border-top:1px solid var(--as);}
 .danger-zone{margin-top:22px;padding-top:18px;border-top:1px solid var(--as);}
 .danger-lbl{font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:#a05050;margin-bottom:6px;}
 .danger-txt{font-size:12px;color:var(--ink-light);line-height:1.6;margin-bottom:12px;}
@@ -819,7 +820,8 @@ async function openSettings(){
       <hr style="border:none;border-top:1px solid var(--as);margin:20px 0;">`;
 
   if(isPsy()){
-    h+=`<label>Ваш код для клиентов</label>
+    h+=`<div class="sect-head">Для моих клиентов</div>
+        <label>Код, который вы даёте клиентам</label>
         <div class="codebox"><div class="codeval">${x(profile.access_code||'—')}</div></div>
         <p style="font-size:12px;color:var(--ink-light);line-height:1.6;">
           Передайте этот код клиенту. Он введёт его у себя в настройках, и вам придёт заявка.
@@ -828,26 +830,29 @@ async function openSettings(){
         <div class="brow"><button class="btn bs" onclick="regenCode()">Сменить код</button></div>
         <p style="font-size:12px;color:var(--ink-light);margin-top:8px;line-height:1.6;">
           После смены старый код перестаёт работать. Уже подтверждённые клиенты остаются.
-        </p>
-        <hr style="border:none;border-top:1px solid var(--as);margin:20px 0;">`;
+        </p>`;
   }
+
+  const myHead = isPsy() ? 'Мой собственный психолог' : 'Мой психолог';
+  const myHint = isPsy()
+    ? 'Это про вас как клиента. Если вы сами в терапии или на супервизии — введите код своего специалиста. К вашим клиентам это отношения не имеет.'
+    : 'Если психолога нет — ничего вводить не нужно. Дневник работает и без него.';
 
   if(profile.psychologist_id){
     const st=profile.psychologist_status==='active'
       ? '<span style="color:var(--green)">подключён</span>'
       : '<span style="color:var(--nyb)">заявка отправлена, ждём подтверждения</span>';
-    h+=`<label>Мой психолог</label>
+    h+=`<div class="sect-head">${myHead}</div>
         <p style="font-size:13px;color:var(--ink-soft);line-height:1.7;">Статус: ${st}</p>
         <p style="font-size:12px;color:var(--ink-light);margin-top:6px;line-height:1.6;">
           При отключении все ваши записи остаются у вас — психолог просто теряет к ним доступ.
         </p>
         <div class="brow"><button class="btn bs" onclick="unlinkPsy()">Отключить психолога</button></div>`;
   } else {
-    h+=`<label>Код психолога</label>
+    h+=`<div class="sect-head">${myHead}</div>
+        <p style="font-size:12px;color:var(--ink-light);margin:-4px 0 10px;line-height:1.6;">${myHint}</p>
+        <label>Код вашего психолога</label>
         <input type="text" id="psyCode" placeholder="например ABC123" style="text-transform:uppercase;">
-        <p style="font-size:12px;color:var(--ink-light);margin-top:8px;line-height:1.6;">
-          Если психолога нет — ничего вводить не нужно. Дневник работает и без него.
-        </p>
         <div class="ferr" id="setErr"></div>
         <div class="brow"><button class="btn bp" onclick="linkPsy()">Подключить</button></div>`;
   }
