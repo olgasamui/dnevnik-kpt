@@ -1072,7 +1072,8 @@ async function renderClients(){
   const paid=until&&until>new Date();
   const limit=paid?10:1;
   const isTrial=profile.plan==='trial';
-  const dd=until?until.toLocaleDateString('ru',{day:'numeric',month:'long'}):'';
+  const dd=until?until.toLocaleDateString('ru',{day:'numeric',month:'long',year:'numeric'}):'';
+  const forever=until&&(until-new Date())>5*365*86400000;   // оплачено больше чем на 5 лет = бессрочно
   const daysLeft=until?Math.ceil((until-new Date())/86400000):0;
 
   // отсрочка: 5 дней после окончания оплаты доступ сохраняется
@@ -1089,7 +1090,7 @@ async function renderClients(){
       Дальше будет ещё 5 дней на оплату, а потом доступным останется
       один клиент — остальные сохранятся и вернутся сразу после оплаты.</div>`+bar;
   } else if(paid){
-    bar+=`Тариф активен до ${dd}.`;
+    bar+=forever?'Бессрочный доступ.':`Тариф активен до ${dd}.`;
   } else if(inGrace){
     bar=`<div class="warnbox hard">
       Оплата не поступила. Доступ ко всем клиентам сохраняется ещё
