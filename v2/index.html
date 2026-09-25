@@ -40,6 +40,7 @@ input::placeholder,textarea::placeholder{color:var(--ink-light);}
 .ferr.show{display:block;}
 .fok{font-size:12px;color:var(--green);background:var(--gs);padding:8px 12px;border-radius:8px;margin-top:10px;display:none;line-height:1.5;}
 .fok.show{display:block;}
+.alink{font-size:12px;color:var(--aw);cursor:pointer;text-decoration:underline;}
 
 .atabs{display:flex;gap:4px;background:var(--bg);padding:4px;border-radius:10px;margin-bottom:18px;}
 .atab{flex:1;padding:9px;text-align:center;border-radius:7px;font-size:13px;font-weight:500;color:var(--ink-light);cursor:pointer;transition:all .15s;}
@@ -255,6 +256,21 @@ input::placeholder,textarea::placeholder{color:var(--ink-light);}
 .clocked{font-size:11px;color:var(--ink-light);margin-top:3px;}
 .ckept{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:3px 9px;border-radius:12px;background:var(--gs);color:#3a6a4a;}
 
+/* ДНЕВНИК — СВОБОДНЫЕ ЗАПИСИ */
+.choose{background:var(--paper);border:1.5px solid var(--as);border-radius:16px;padding:18px 20px;margin-bottom:12px;cursor:pointer;transition:all .2s;}
+.choose:hover{border-color:var(--aw);box-shadow:0 4px 20px var(--shadow);}
+.choose-t{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--accent);margin-bottom:4px;}
+.choose-t span{font-family:'Mulish',sans-serif;font-size:12px;color:var(--ink-light);}
+.choose-d{font-size:13px;color:var(--ink-soft);line-height:1.6;}
+.choose-n{font-size:12px;color:var(--aw);margin-top:6px;}
+.choose-n:empty{display:none;}
+textarea.free-ta{min-height:320px;font-size:15px;line-height:1.75;resize:vertical;background:var(--paper);}
+.free-bar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap;}
+.free-status{font-size:12px;color:var(--ink-light);margin-left:auto;}
+.free-status.err{color:var(--err);}
+.free-full{white-space:normal;}
+.free-empty{color:var(--ink-light);font-style:italic;}
+
 @media(max-width:500px){.card{padding:18px 14px;}.ctitle{font-size:20px;}.main{padding:16px 12px 60px;}.header{padding:11px 13px;}}
 </style>
 </head>
@@ -264,23 +280,28 @@ input::placeholder,textarea::placeholder{color:var(--ink-light);}
 <div class="overlay open" id="mAuth">
 <div class="modal">
   <div class="mtitle">КПТ <em style="font-style:italic;color:var(--aw)">дневник</em></div>
-  <div class="msub">Войдите, чтобы начать вести дневник. Записи хранятся в облаке — доступ с любого устройства.</div>
-  <div class="atabs">
+  <div class="msub" id="authSub">Войдите, чтобы начать вести дневник. Записи хранятся в облаке — доступ с любого устройства.</div>
+  <div class="atabs" id="authTabs">
     <div class="atab act" id="atLog" onclick="switchAuth('log')">Вход</div>
     <div class="atab" id="atReg" onclick="switchAuth('reg')">Регистрация</div>
   </div>
   <label>Email</label>
-  <input type="email" id="aEmail" placeholder="your@email.com" autocomplete="email">
-  <label>Пароль</label>
-  <div class="pfield">
-    <input type="password" id="aPass" placeholder="минимум 8 символов" autocomplete="current-password">
-    <button type="button" class="peye" onclick="togglePass('aPass',this)">Показать</button>
+  <input type="email" id="aEmail" placeholder="your@email.com" autocomplete="email" onkeydown="if(event.key==='Enter')doAuth()">
+  <div id="passWrap">
+    <label>Пароль</label>
+    <div class="pfield">
+      <input type="password" id="aPass" placeholder="минимум 8 символов" autocomplete="current-password" onkeydown="if(event.key==='Enter')doAuth()">
+      <button type="button" class="peye" onclick="togglePass('aPass',this)">Показать</button>
+    </div>
   </div>
   <div class="ferr" id="authErr"></div>
   <div class="fok" id="authOk"></div>
   <button class="btn bp" id="authBtn" style="width:100%;padding:13px;margin-top:16px;" onclick="doAuth()">Войти</button>
   <div id="forgotWrap" style="text-align:center;margin-top:10px;">
-    <span style="font-size:12px;color:var(--aw);cursor:pointer;text-decoration:underline;" onclick="forgotPassword()">Забыли пароль?</span>
+    <span class="alink" onclick="switchAuth('forgot')">Забыли пароль?</span>
+  </div>
+  <div id="backWrap" style="text-align:center;margin-top:10px;display:none;">
+    <span class="alink" onclick="switchAuth('log')">← Вернуться ко входу</span>
   </div>
   <p id="authHint" style="font-size:12px;color:var(--ink-light);margin-top:12px;line-height:1.6;text-align:center;">
     Нет аккаунта? Переключитесь на «Регистрация» сверху.
@@ -292,14 +313,20 @@ input::placeholder,textarea::placeholder{color:var(--ink-light);}
 <div class="overlay" id="mNewPass">
 <div class="modal">
   <div class="mtitle">Новый пароль</div>
-  <div class="msub">Придумайте новый пароль для входа.</div>
+  <div class="msub">Придумайте новый пароль — дальше входите с ним.</div>
   <label>Новый пароль</label>
   <div class="pfield">
     <input type="password" id="npPass" placeholder="минимум 8 символов" autocomplete="new-password">
     <button type="button" class="peye" onclick="togglePass('npPass',this)">Показать</button>
   </div>
+  <label>Повторите пароль</label>
+  <div class="pfield">
+    <input type="password" id="npPass2" placeholder="ещё раз тот же пароль" autocomplete="new-password" onkeydown="if(event.key==='Enter')setNewPassword()">
+    <button type="button" class="peye" onclick="togglePass('npPass2',this)">Показать</button>
+  </div>
   <div class="ferr" id="npErr"></div>
-  <div class="brow"><button class="btn bp" onclick="setNewPassword()">Сохранить</button></div>
+  <div class="fok" id="npOk"></div>
+  <div class="brow"><button class="btn bp" id="npBtn" onclick="setNewPassword()">Сохранить пароль</button></div>
 </div>
 </div>
 
@@ -364,6 +391,13 @@ input::placeholder,textarea::placeholder{color:var(--ink-light);}
     <div class="jhead" id="jHead">Записи</div>
     <button class="hbtn" id="btnBackToClients" style="display:none;" onclick="backToClients()">← К списку клиентов</button>
   </div>
+  <div class="atabs" id="kindTabs" style="background:var(--as);">
+    <div class="atab act" id="kt-kpt" onclick="setKind('kpt')">КПТ</div>
+    <div class="atab" id="kt-free" onclick="setKind('free')">Дневник</div>
+  </div>
+  <div id="fSearchWrap" style="display:none;margin-bottom:16px;">
+    <input type="text" id="fSearch" placeholder="🔍 Поиск по записям дневника…" oninput="renderFreeList()">
+  </div>
   <div id="jList"><div class="gloading">Загрузка записей</div></div>
 </div>
 
@@ -376,6 +410,36 @@ input::placeholder,textarea::placeholder{color:var(--ink-light);}
 
 <!-- НОВАЯ ЗАПИСЬ -->
 <div class="view" id="v-write">
+  <!-- ЧТО СОЗДАТЬ -->
+  <div id="wChoose">
+    <div class="jhead" style="margin-bottom:16px;">Что создать?</div>
+    <div class="choose" onclick="chooseKpt()">
+      <div class="choose-t">Запись КПТ <span>· 7 шагов</span></div>
+      <div class="choose-d">Ситуация, эмоции, мысли, тело, потребности, конструктивные мысли, поведение автора жизни.</div>
+      <div class="choose-n" id="chKptHint"></div>
+    </div>
+    <div class="choose" onclick="chooseFree()">
+      <div class="choose-t">Запись в дневник</div>
+      <div class="choose-d">Просто текст — как лист в тетради. Что происходило за день или за неделю.</div>
+    </div>
+  </div>
+
+  <!-- СВОБОДНАЯ ЗАПИСЬ -->
+  <div id="wFree" style="display:none;">
+    <div class="card vis">
+      <div class="sbadge"><div class="sdot"></div>Дневник</div>
+      <h2 class="ctitle" id="freeDate"></h2>
+      <textarea id="fFree" class="free-ta" placeholder="Что происходило сегодня или за эту неделю…" oninput="onFreeInput()"></textarea>
+      <div class="free-bar">
+        <span id="freeShareWrap"></span>
+        <span class="free-status" id="freeStatus"></span>
+      </div>
+      <div class="nrow"><button class="bnxt" onclick="finishFree()">Готово</button></div>
+    </div>
+  </div>
+
+  <!-- ЗАПИСЬ КПТ -->
+  <div id="wKpt" style="display:none;">
   <div class="pwrap">
     <div class="ps active" id="ps1"></div><div class="ps" id="ps2"></div><div class="ps" id="ps3"></div>
     <div class="ps" id="ps4"></div><div class="ps" id="ps5"></div><div class="ps" id="ps6"></div><div class="ps" id="ps7"></div>
@@ -604,6 +668,7 @@ input::placeholder,textarea::placeholder{color:var(--ink-light);}
     <div id="dSum"></div>
     <button class="bnew" onclick="newEntry()">+ Новая запись</button>
   </div>
+  </div>
 </div>
 </div>
 <script>
@@ -614,6 +679,12 @@ input::placeholder,textarea::placeholder{color:var(--ink-light);}
 // ============================================================
 const SUPABASE_URL = 'https://osespyfocfvdslygjhfl.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_ft0jNWPEhPUizfGd7taxSQ_eF1v1rRD';
+
+// Ссылка из письма «сброс пароля» открывает сайт с метками в адресе.
+// Читаем их ДО создания клиента Supabase — он сам стирает адрес после входа.
+const URLP = new URLSearchParams(location.hash.slice(1)+'&'+location.search.slice(1));
+let recoveryMode = URLP.get('type')==='recovery';
+const linkError = URLP.get('error_code') || URLP.get('error') || '';
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -655,15 +726,22 @@ const targetId = ()=> isViewing()? viewingClient.id : user.id;
 //  ЗАПУСК
 // ============================================================
 document.addEventListener('DOMContentLoaded',async()=>{
-  sb.auth.onAuthStateChange(async(ev,session)=>{
+  sb.auth.onAuthStateChange((ev,session)=>{
     if(ev==='SIGNED_OUT'){location.href=location.pathname;}
-    if(ev==='PASSWORD_RECOVERY'){
-      document.getElementById('mAuth').classList.remove('open');
-      document.getElementById('mNewPass').classList.add('open');
-    }
+    if(ev==='PASSWORD_RECOVERY'){recoveryMode=true;showNewPass();}
   });
 
   const {data:{session}}=await sb.auth.getSession();
+
+  // Пришли по ссылке «сброс пароля»: сначала новый пароль, потом дневник
+  if(recoveryMode){
+    if(session&&session.user){user=session.user;showNewPass();}
+    else expiredLink();
+    return;
+  }
+  // Ссылка из письма не сработала (устарела или уже использована)
+  if(linkError){expiredLink();return;}
+
   if(session&&session.user){
     user=session.user;
     document.getElementById('mAuth').classList.remove('open');
@@ -692,17 +770,42 @@ function togglePass(id,btn){
   btn.textContent = show ? 'Скрыть' : 'Показать';
 }
 
+const AUTH_BTN={log:'Войти',reg:'Создать аккаунт',forgot:'Отправить ссылку'};
+
 function switchAuth(mode){
   authMode=mode;
+  const forgot=mode==='forgot';
   document.getElementById('atLog').classList.toggle('act',mode==='log');
   document.getElementById('atReg').classList.toggle('act',mode==='reg');
-  document.getElementById('authBtn').textContent=mode==='log'?'Войти':'Создать аккаунт';
+  document.getElementById('authTabs').style.display=forgot?'none':'flex';
+  document.getElementById('passWrap').style.display=forgot?'none':'block';
+  document.getElementById('authBtn').textContent=AUTH_BTN[mode];
   document.getElementById('forgotWrap').style.display=mode==='log'?'block':'none';
+  document.getElementById('backWrap').style.display=forgot?'block':'none';
+  document.getElementById('authSub').textContent=forgot
+    ?'Восстановление пароля. Введите email, с которым регистрировались, — пришлём письмо со ссылкой. По ней откроется страница, где можно задать новый пароль.'
+    :'Войдите, чтобы начать вести дневник. Записи хранятся в облаке — доступ с любого устройства.';
+  document.getElementById('authHint').style.display=forgot?'none':'block';
   document.getElementById('authHint').innerHTML=mode==='log'
     ?'Нет аккаунта? Переключитесь на «Регистрация» сверху.'
     :'Уже есть аккаунт? Переключитесь на «Вход» сверху.';
   document.getElementById('aPass').setAttribute('autocomplete',mode==='log'?'current-password':'new-password');
   clearAuthMsg();
+}
+
+// Понятные сообщения вместо английских ошибок Supabase
+function authErrText(e){
+  const m=(e&&e.message)||String(e||'Ошибка');
+  if(/Invalid login/i.test(m)) return 'Неверный email или пароль';
+  if(/already registered/i.test(m)) return 'Этот email уже зарегистрирован. Переключитесь на «Вход».';
+  if(/Email not confirmed/i.test(m)) return 'Email не подтверждён. Проверьте почту.';
+  if(/should be different/i.test(m)) return 'Новый пароль должен отличаться от старого.';
+  if(/Password should be at least/i.test(m)) return 'Пароль слишком короткий — минимум 8 символов.';
+  if(/security purposes|rate limit|too many/i.test(m)) return 'Слишком много попыток подряд. Подождите минуту и попробуйте снова.';
+  if(/session missing|expired|invalid.*token/i.test(m)) return 'Ссылка из письма устарела. Запросите новую на странице входа.';
+  if(/valid email|invalid format/i.test(m)) return 'Проверьте, правильно ли написан email.';
+  if(/Failed to fetch|NetworkError|Load failed/i.test(m)) return 'Нет связи с сервером. Проверьте интернет и попробуйте снова.';
+  return m;
 }
 function clearAuthMsg(){
   document.getElementById('authErr').classList.remove('show');
@@ -712,6 +815,7 @@ function showAuthErr(m){clearAuthMsg();const e=document.getElementById('authErr'
 function showAuthOk(m){clearAuthMsg();const e=document.getElementById('authOk');e.textContent=m;e.classList.add('show');}
 
 async function doAuth(){
+  if(authMode==='forgot') return sendResetLink();
   const email=document.getElementById('aEmail').value.trim();
   const pass=document.getElementById('aPass').value;
   if(!email||!pass){showAuthErr('Заполните email и пароль');return;}
@@ -735,32 +839,68 @@ async function doAuth(){
     document.getElementById('mAuth').classList.remove('open');
     await startApp();
   }catch(e){
-    let m=e.message||'Ошибка';
-    if(m.includes('Invalid login')) m='Неверный email или пароль';
-    else if(m.includes('already registered')) m='Этот email уже зарегистрирован. Переключитесь на «Вход».';
-    else if(m.includes('Email not confirmed')) m='Email не подтверждён. Проверьте почту.';
-    showAuthErr(m);
-    btn.disabled=false;btn.textContent=authMode==='log'?'Войти':'Создать аккаунт';
+    showAuthErr(authErrText(e));
+    btn.disabled=false;btn.textContent=AUTH_BTN[authMode];
   }
 }
 
-async function forgotPassword(){
+// ============================================================
+//  СБРОС ПАРОЛЯ — всё на странице, без всплывающих окон браузера
+//  «Забыли пароль?» → письмо → ссылка открывает сайт → форма «Новый пароль»
+// ============================================================
+async function sendResetLink(){
   const email=document.getElementById('aEmail').value.trim();
-  if(!email){showAuthErr('Введите email, на который зарегистрирован аккаунт');return;}
+  if(!email){showAuthErr('Введите email, с которым вы регистрировались');return;}
+  const btn=document.getElementById('authBtn');
+  btn.disabled=true;btn.textContent='Отправляю…';
   const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});
-  if(error){showAuthErr('Ошибка: '+error.message);return;}
-  showAuthOk('✓ Письмо отправлено на '+email+'. Перейдите по ссылке из письма.');
+  btn.disabled=false;btn.textContent=AUTH_BTN.forgot;
+  if(error){showAuthErr(authErrText(error));return;}
+  showAuthOk('✓ Если аккаунт с адресом '+email+' есть, мы отправили на него письмо. '+
+    'Откройте письмо и нажмите на ссылку — откроется страница, где можно задать новый пароль. '+
+    'Если письма нет несколько минут, загляните в «Спам».');
+}
+
+function showNewPass(){
+  document.getElementById('mAuth').classList.remove('open');
+  document.getElementById('mNewPass').classList.add('open');
+  setTimeout(()=>document.getElementById('npPass').focus(),100);
+}
+
+function expiredLink(){
+  history.replaceState(null,'',location.pathname);
+  document.getElementById('mNewPass').classList.remove('open');
+  document.getElementById('mAuth').classList.add('open');
+  switchAuth('forgot');
+  showAuthErr('Ссылка из письма устарела или уже была использована. Введите email — пришлём новую.');
 }
 
 async function setNewPassword(){
   const p=document.getElementById('npPass').value;
-  const err=document.getElementById('npErr');
-  if(p.length<8){err.textContent='Минимум 8 символов';err.classList.add('show');return;}
+  const p2=document.getElementById('npPass2').value;
+  const err=document.getElementById('npErr'), ok=document.getElementById('npOk');
+  const btn=document.getElementById('npBtn');
+  err.classList.remove('show');ok.classList.remove('show');
+  const fail=m=>{err.textContent=m;err.classList.add('show');};
+  if(p.length<8) return fail('Пароль должен быть минимум 8 символов');
+  if(p!==p2) return fail('Пароли не совпадают — введите одинаковые');
+
+  btn.disabled=true;btn.textContent='Сохраняю…';
   const {error}=await sb.auth.updateUser({password:p});
-  if(error){err.textContent='Ошибка: '+error.message;err.classList.add('show');return;}
+  if(error){
+    btn.disabled=false;btn.textContent='Сохранить пароль';
+    if(/session missing/i.test(error.message)) return expiredLink();
+    return fail(authErrText(error));
+  }
+  recoveryMode=false;
+  history.replaceState(null,'',location.pathname);
+  ok.textContent='✓ Пароль изменён. Открываю дневник…';ok.classList.add('show');
+  await new Promise(r=>setTimeout(r,1200));
   cm('mNewPass');
+  btn.disabled=false;btn.textContent='Сохранить пароль';
   const {data:{session}}=await sb.auth.getSession();
   if(session){user=session.user;await startApp();}
+  else{document.getElementById('mAuth').classList.add('open');switchAuth('log');}
 }
 
 async function logout(){
@@ -778,7 +918,10 @@ async function loadProfile(){
   profile=data;return data;
 }
 
+let appStarted=false;
 async function startApp(){
+  if(appStarted) return;
+  appStarted=true;
   await loadProfile();
   document.getElementById('topHeader').style.display='flex';
   document.getElementById('tabsRow').style.display='flex';
@@ -800,11 +943,13 @@ function updateBadge(){
 }
 
 function switchTab(t){
+  if(freeDirty) saveFree();   // уходим из дневника — дописанное не теряем
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
   document.getElementById('t-'+t).classList.add('active');
   document.getElementById('v-'+t).classList.add('active');
   if(t==='journal') renderJ();
+  if(t==='write') showChooser();
   if(t==='clients'){viewingClient=null;updateBadge();renderClients();}
 }
 
@@ -877,7 +1022,7 @@ async function changePassword(){
   err.classList.remove('show'); ok.classList.remove('show');
   if(p.length<8){err.textContent='Минимум 8 символов';err.classList.add('show');return;}
   const {error}=await sb.auth.updateUser({password:p});
-  if(error){err.textContent='Ошибка: '+error.message;err.classList.add('show');return;}
+  if(error){err.textContent=authErrText(error);err.classList.add('show');return;}
   document.getElementById('chPass').value='';
   ok.textContent='✓ Пароль изменён. В следующий раз входите с новым.';
   ok.classList.add('show');
@@ -1092,7 +1237,15 @@ async function loadEntries(){
   return data||[];
 }
 
+function dayLabel(ds){
+  const today=new Date().toDateString();
+  const yest=new Date(Date.now()-86400000).toDateString();
+  return ds===today?'Сегодня' : ds===yest?'Вчера'
+    : new Date(ds).toLocaleDateString('ru',{day:'numeric',month:'long',year:'numeric'});
+}
+
 async function renderJ(){
+  if(jKind==='free') return renderFree();
   const box=document.getElementById('jList');
   box.innerHTML='<div class="gloading">Загрузка записей</div>';
   const entries=await loadEntries();
@@ -1107,13 +1260,9 @@ async function renderJ(){
     const ds=new Date(e.created_at).toDateString();
     (groups[ds]=groups[ds]||[]).push(e);
   });
-  const today=new Date().toDateString();
-  const yest=new Date(Date.now()-86400000).toDateString();
   let html='';
   for(const ds of Object.keys(groups)){
-    let lbl = ds===today?'Сегодня' : ds===yest?'Вчера'
-      : new Date(ds).toLocaleDateString('ru',{day:'numeric',month:'long',year:'numeric'});
-    html+=`<div class="dgroup"><div class="dgroup-lbl">${lbl}</div>`+
+    html+=`<div class="dgroup"><div class="dgroup-lbl">${dayLabel(ds)}</div>`+
           groups[ds].map(buildCard).join('')+`</div>`;
   }
   box.innerHTML=html;
@@ -1308,6 +1457,222 @@ function cancelEditSec(ev,eid,field,origClass){
 }
 
 // ============================================================
+//  ДНЕВНИК — свободные записи (таблица free_entries)
+//  Только текст и дата. По умолчанию запись приватная.
+//  Сохраняется сама через секунду после того, как перестали печатать.
+// ============================================================
+let jKind='kpt';          // какая лента открыта: 'kpt' или 'free'
+let freeCache=[];
+let freeEdit=null;        // открытая в редакторе запись {id, shared, created_at}
+let freeDirty=false, freeTimer=null, freeChain=Promise.resolve();
+
+function setKind(k,noRender){
+  jKind=k;
+  document.getElementById('kt-kpt').classList.toggle('act',k==='kpt');
+  document.getElementById('kt-free').classList.toggle('act',k==='free');
+  document.getElementById('fSearchWrap').style.display=k==='free'?'block':'none';
+  if(!noRender) renderJ();
+}
+
+async function renderFree(){
+  const box=document.getElementById('jList');
+  box.innerHTML='<div class="gloading">Загрузка записей</div>';
+  const {data,error}=await sb.from('free_entries')
+    .select('*')
+    .eq('user_id',targetId())
+    .order('created_at',{ascending:false});
+  if(error){console.error(error);box.innerHTML='<div class="empty">Не удалось загрузить записи. Проверьте интернет и обновите страницу.</div>';return;}
+  freeCache=data||[];
+  renderFreeList();
+}
+
+function renderFreeList(){
+  const box=document.getElementById('jList');
+  const q=document.getElementById('fSearch').value.trim().toLowerCase();
+  const list=q ? freeCache.filter(e=>(unpackText(e.body)||'').toLowerCase().includes(q)) : freeCache;
+  if(!freeCache.length){
+    box.innerHTML=`<div class="empty"><span class="empty-big">✦</span>${
+      isViewing()?'Клиент пока не открыл вам записи дневника.'
+      :'В дневнике пока нет записей.<br>Нажмите «+ Новая запись» → «Запись в дневник».'}</div>`;
+    return;
+  }
+  if(!list.length){box.innerHTML='<div class="empty">Ничего не найдено</div>';return;}
+  const groups={};
+  list.forEach(e=>{const ds=new Date(e.created_at).toDateString();(groups[ds]=groups[ds]||[]).push(e);});
+  box.innerHTML=Object.keys(groups).map(ds=>
+    `<div class="dgroup"><div class="dgroup-lbl">${dayLabel(ds)}</div>${groups[ds].map(buildFreeCard).join('')}</div>`
+  ).join('');
+}
+
+function buildFreeCard(e){
+  const time=new Date(e.created_at).toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});
+  const text=unpackText(e.body)||'';
+  const preview=text.trim()?x(text):'<span class="free-empty">Пустая запись</span>';
+  let acts='';
+  if(!isViewing()){
+    const shown=e.shared_with_psychologist;
+    const shareBtn=profile.psychologist_id
+      ? `<button class="shbtn ${shown?'on':'off'}" onclick="toggleFreeShare('${e.id}',${shown});event.stopPropagation()">
+           ${shown?'👁 Видна психологу':'🔒 Только для меня'}</button>` : '';
+    acts=`<div class="eacts">
+      <button class="abtn" onclick="openFreeEditor('${e.id}');event.stopPropagation()">✏️ Редактировать</button>
+      ${shareBtn}
+      <button class="abtn del" onclick="delFree('${e.id}');event.stopPropagation()">Удалить</button></div>`;
+  }
+  return `<div class="ecard" id="fc-${e.id}">
+    <div class="ehead" onclick="document.getElementById('fc-${e.id}').classList.toggle('open')">
+      <div class="etime">${time}</div>
+      <div class="epreview"><div class="esit-text">${preview}</div></div>
+      <div class="echev">▾</div>
+    </div>
+    <div class="ebody"><div class="esec"><div class="esval free-full">${preview}</div></div>${acts}</div>
+  </div>`;
+}
+
+async function toggleFreeShare(id,cur){
+  const {error}=await sb.from('free_entries').update({shared_with_psychologist:!cur}).eq('id',id);
+  if(error){alert('Не удалось изменить: '+error.message);return;}
+  await renderFree();
+  const c=document.getElementById('fc-'+id);if(c)c.classList.add('open');
+}
+
+async function delFree(id){
+  if(!confirm('Удалить запись из дневника?')) return;
+  const {error}=await sb.from('free_entries').delete().eq('id',id);
+  if(error){alert('Не удалось удалить: '+error.message);return;}
+  await renderFree();
+}
+
+// --- «+ Новая запись»: выбор, что создать ---
+function kptInProgress(){
+  return !document.getElementById('sDone').classList.contains('vis') &&
+    (step>1 || document.getElementById('fSit').value.trim()!=='');
+}
+function showChooser(){
+  document.getElementById('wChoose').style.display='block';
+  document.getElementById('wKpt').style.display='none';
+  document.getElementById('wFree').style.display='none';
+  document.getElementById('chKptHint').textContent=
+    kptInProgress()?'У вас есть незаконченная запись — продолжите с того же места.':'';
+}
+function chooseKpt(){
+  if(document.getElementById('sDone').classList.contains('vis')) resetKpt();
+  document.getElementById('wChoose').style.display='none';
+  document.getElementById('wKpt').style.display='block';
+}
+function chooseFree(){ openFreeEditor(null); }
+
+// --- редактор записи дневника ---
+async function openFreeEditor(id){
+  await saveFree();                       // сначала дописать предыдущую
+  const e=id?freeCache.find(z=>String(z.id)===String(id)):null;
+  freeEdit=e?{id:e.id,shared:e.shared_with_psychologist,created_at:e.created_at}
+            :{id:null,shared:false,created_at:null};
+  switchTab('write');
+  document.getElementById('wChoose').style.display='none';
+  document.getElementById('wFree').style.display='block';
+  const ta=document.getElementById('fFree');
+  ta.value=e?(unpackText(e.body)||''):'';
+  const d=e?new Date(e.created_at):new Date();
+  document.getElementById('freeDate').textContent=
+    d.toLocaleDateString('ru',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  setFreeStatus(e?'Изменения сохраняются сами':'');
+  renderFreeShare();
+  window.scrollTo({top:0,behavior:'smooth'});
+  setTimeout(()=>{ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length);},100);
+}
+
+function renderFreeShare(){
+  const w=document.getElementById('freeShareWrap');
+  if(!profile||!profile.psychologist_id||!freeEdit){w.innerHTML='';return;}
+  const on=freeEdit.shared;
+  w.innerHTML=`<button class="shbtn ${on?'on':'off'}" onclick="toggleEditorShare()">${
+    on?'👁 Видна психологу':'🔒 Только для меня'}</button>`;
+}
+
+async function toggleEditorShare(){
+  freeEdit.shared=!freeEdit.shared;
+  renderFreeShare();
+  if(freeEdit.id){
+    const {error}=await sb.from('free_entries')
+      .update({shared_with_psychologist:freeEdit.shared}).eq('id',freeEdit.id);
+    if(error){freeEdit.shared=!freeEdit.shared;renderFreeShare();alert('Не удалось изменить: '+error.message);}
+  }
+}
+
+function setFreeStatus(t,isErr){
+  const s=document.getElementById('freeStatus');
+  s.textContent=t;s.classList.toggle('err',!!isErr);
+}
+
+function onFreeInput(){
+  freeDirty=true;
+  setFreeStatus('…');
+  clearTimeout(freeTimer);
+  freeTimer=setTimeout(saveFree,1000);
+}
+
+// Сохранения идут строго по очереди, чтобы запись не создалась дважды
+function saveFree(){
+  clearTimeout(freeTimer);
+  freeChain=freeChain.then(doSaveFree);
+  return freeChain;
+}
+
+async function doSaveFree(){
+  if(!freeDirty||!freeEdit) return;
+  const rec=freeEdit;
+  const text=document.getElementById('fFree').value;
+  freeDirty=false;
+  try{
+    if(!rec.id){
+      if(!text.trim()){setFreeStatus('');return;}   // пустую не создаём
+      setFreeStatus('Сохраняю…');
+      const {data,error}=await sb.from('free_entries').insert({
+        user_id:user.id, body:packText(text), shared_with_psychologist:rec.shared
+      }).select().single();
+      if(error) throw error;
+      rec.id=data.id;rec.created_at=data.created_at;
+    } else {
+      setFreeStatus('Сохраняю…');
+      const {error}=await sb.from('free_entries').update({body:packText(text)}).eq('id',rec.id);
+      if(error) throw error;
+    }
+    if(rec===freeEdit) setFreeStatus('Сохранено ✓');
+  }catch(e){
+    console.error(e);
+    freeDirty=true;
+    if(rec===freeEdit) setFreeStatus('Не сохранилось — проверьте интернет. Попробую ещё раз.',true);
+    clearTimeout(freeTimer);
+    freeTimer=setTimeout(saveFree,5000);
+  }
+}
+
+async function finishFree(){
+  await saveFree();
+  if(freeDirty){alert('Запись пока не сохранилась — нет связи с сервером. Не закрывайте страницу, попробуйте через минуту.');return;}
+  freeEdit=null;
+  if(isViewing()) backToOwnDiary();
+  setKind('free',true);
+  switchTab('journal');
+}
+
+// Психолог мог писать свою запись, пока смотрел дневник клиента
+function backToOwnDiary(){
+  viewingClient=null;updateBadge();
+  document.getElementById('btnBackToClients').style.display='none';
+  document.getElementById('jHead').textContent='Записи';
+}
+
+// Не дать закрыть страницу с несохранённым текстом
+window.addEventListener('beforeunload',e=>{
+  if(freeDirty){saveFree();e.preventDefault();e.returnValue='';}
+});
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='hidden'&&freeDirty) saveFree();
+});
+
+// ============================================================
 //  СОЗДАНИЕ ЗАПИСИ
 // ============================================================
 function buildDists(){
@@ -1446,6 +1811,11 @@ async function saveEntry(){
 }
 
 function newEntry(){
+  resetKpt();
+  switchTab('write');
+}
+
+function resetKpt(){
   ['fSit','fTho','fBody','fNeed','fCons','fAuth'].forEach(id=>document.getElementById(id).value='');
   ['customEmo','customNeed'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   ['customEmoGrid','customNeedGrid'].forEach(id=>{const e=document.getElementById(id);if(e)e.innerHTML='';});
@@ -1455,7 +1825,6 @@ function newEntry(){
   const il=document.getElementById('eIntList');il.style.display='none';il.innerHTML='';
   document.getElementById('sDone').classList.remove('vis');
   step=1;document.getElementById('s1').classList.add('vis');upProg();
-  switchTab('write');
 }
 </script>
 </body>
