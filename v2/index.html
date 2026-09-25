@@ -256,6 +256,18 @@ input::placeholder,textarea::placeholder{color:var(--ink-light);}
 .clocked{font-size:11px;color:var(--ink-light);margin-top:3px;}
 .ckept{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:3px 9px;border-radius:12px;background:var(--gs);color:#3a6a4a;}
 
+/* ВЫ ПСИХОЛОГ? */
+.psybox{background:var(--ps);border-left:3px solid var(--pu);border-radius:0 12px 12px 0;padding:14px 16px;margin-top:10px;}
+.psybox-t{font-family:'Cormorant Garamond',serif;font-size:20px;color:#4a3a70;margin-bottom:4px;}
+.psybox-d{font-size:13px;color:var(--ink-soft);line-height:1.6;}
+.psybox-c{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:center;}
+.psybox-c a{font-size:13px;text-decoration:none;}
+.psybtn{background:var(--pu);color:#fff;padding:8px 16px;border-radius:20px;font-weight:600;}
+.psybtn:hover{opacity:.9;}
+.psymail{color:#4a3a70;border-bottom:1px dotted #4a3a70;}
+.limitcontact{font-size:12px;color:var(--ink-soft);margin-top:6px;}
+.limitcontact a{color:var(--aw);}
+
 /* ДНЕВНИК — СВОБОДНЫЕ ЗАПИСИ */
 .choose{background:var(--paper);border:1.5px solid var(--as);border-radius:16px;padding:18px 20px;margin-bottom:12px;cursor:pointer;transition:all .2s;}
 .choose:hover{border-color:var(--aw);box-shadow:0 4px 20px var(--shadow);}
@@ -306,6 +318,17 @@ textarea.free-ta{min-height:320px;font-size:15px;line-height:1.75;resize:vertica
   <p id="authHint" style="font-size:12px;color:var(--ink-light);margin-top:12px;line-height:1.6;text-align:center;">
     Нет аккаунта? Переключитесь на «Регистрация» сверху.
   </p>
+  <div style="text-align:center;margin-top:14px;padding-top:12px;border-top:1px solid var(--as);">
+    <span class="alink" style="color:var(--pu);" onclick="document.getElementById('mPsy').classList.add('open')">Вы психолог? Кабинет для специалиста →</span>
+  </div>
+</div>
+</div>
+
+<!-- ВЫ ПСИХОЛОГ? -->
+<div class="overlay" id="mPsy" style="z-index:600;">
+<div class="modal">
+  <button class="mclose" onclick="cm('mPsy')">✕</button>
+  <div id="psyModalBody"></div>
 </div>
 </div>
 
@@ -956,6 +979,37 @@ function switchTab(t){
 function cm(id){document.getElementById(id).classList.remove('open');}
 
 // ============================================================
+//  «ВЫ ПСИХОЛОГ?» — контакты администратора
+//  Психологов подключаю вручную, чтобы был личный контакт.
+// ============================================================
+const ADMIN_TG='olga_samui';
+const ADMIN_MAIL='dnevnikkpt@gmail.com';
+
+function psyContacts(){
+  return `<div class="psybox-c">
+    <a class="psybtn" href="https://t.me/${ADMIN_TG}" target="_blank" rel="noopener">Написать в Телеграм</a>
+    <a class="psymail" href="mailto:${ADMIN_MAIL}">${ADMIN_MAIL}</a>
+  </div>`;
+}
+function psyBlock(){
+  return `<div class="psybox">
+    <div class="psybox-t">Вы психолог?</div>
+    <div class="psybox-d">Ведите записи всех своих клиентов в одном кабинете.
+      Зарегистрируйтесь на сайте и напишите администратору, который откроет вам
+      доступ к личному кабинету психолога.</div>
+    ${psyContacts()}
+  </div>`;
+}
+function limitContact(){
+  return `<div class="limitcontact">Продлить или расширить доступ — напишите администратору:
+    <a href="https://t.me/${ADMIN_TG}" target="_blank" rel="noopener">Телеграм @${ADMIN_TG}</a> или
+    <a href="mailto:${ADMIN_MAIL}">${ADMIN_MAIL}</a></div>`;
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('psyModalBody').innerHTML=psyBlock();
+});
+
+// ============================================================
 //  НАСТРОЙКИ
 // ============================================================
 async function openSettings(){
@@ -1011,6 +1065,8 @@ async function openSettings(){
         <div class="ferr" id="setErr"></div>
         <div class="brow"><button class="btn bp" onclick="linkPsy()">Подключить</button></div>`;
   }
+
+  if(!isPsy()) h+=`<div class="sect-head">Для специалистов</div>${psyBlock()}`;
 
   el.innerHTML=h;
   document.getElementById('mSettings').classList.add('open');
@@ -1107,8 +1163,9 @@ async function renderClients(){
         ?' Если нужен другой — можно заменить, один раз.'
         :' Выбор уже сделан.'}</div>`+bar;
   } else {
-    bar+='Бесплатный тариф — один клиент. Подключите тариф, чтобы вести до десяти.';
+    bar+='Бесплатный тариф — один клиент. Чтобы вести до десяти, напишите администратору.';
   }
+  if(!paid || (isTrial && daysLeft<=5) || !until) bar+=limitContact();
   document.getElementById('limitBar').innerHTML=bar;
 
   // какой клиент остаётся доступным без оплаты
