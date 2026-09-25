@@ -261,6 +261,12 @@ input::placeholder,textarea::placeholder{color:var(--ink-light);}
 .clocked{font-size:11px;color:var(--ink-light);margin-top:3px;}
 .ckept{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:3px 9px;border-radius:12px;background:var(--gs);color:#3a6a4a;}
 
+/* СВОЙ ДНЕВНИК / ДНЕВНИК КЛИЕНТА (у психолога) */
+.jhint{font-size:13px;color:var(--ink-soft);margin:-12px 0 18px;line-height:1.6;}
+.cbanner{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:var(--tint);border:1px solid var(--as);border-left:4px solid var(--accent);border-radius:0 12px 12px 0;padding:12px 14px;margin-bottom:18px;}
+.cbanner span{font-size:15px;color:var(--ink);}
+.cbanner b{font-weight:700;}
+
 /* ВЫ ПСИХОЛОГ? */
 .psybox{background:var(--ps);border-left:3px solid var(--pu);border-radius:0 12px 12px 0;padding:14px 16px;margin-top:10px;}
 .psybox-t{font-family:'Cormorant Garamond',serif;font-size:20px;color:#4a3a70;margin-bottom:4px;}
@@ -425,7 +431,7 @@ textarea.free-ta{min-height:320px;font-size:15px;line-height:1.75;resize:vertica
 
 <!-- ВКЛАДКИ -->
 <div class="tabs" id="tabsRow" style="display:none;">
-  <div class="tab active" id="t-journal" onclick="switchTab('journal')">Записи</div>
+  <div class="tab active" id="t-journal" onclick="openOwnJournal()">Записи</div>
   <div class="tab" id="t-write" onclick="switchTab('write')">+ Новая запись</div>
   <div class="tab" id="t-clients" onclick="switchTab('clients')" style="display:none;">Клиенты</div>
 </div>
@@ -434,10 +440,14 @@ textarea.free-ta{min-height:320px;font-size:15px;line-height:1.75;resize:vertica
 
 <!-- ЗАПИСИ -->
 <div class="view active" id="v-journal">
-  <div class="jtop">
-    <div class="jhead" id="jHead">Записи</div>
-    <button class="hbtn" id="btnBackToClients" style="display:none;" onclick="backToClients()">← К списку клиентов</button>
+  <div class="cbanner" id="clientBanner" style="display:none;">
+    <span>📖 Дневник клиента: <b id="cbName"></b></span>
+    <button class="hbtn" onclick="backToClients()">← К списку клиентов</button>
   </div>
+  <div class="jtop" id="jTop">
+    <div class="jhead" id="jHead">Записи</div>
+  </div>
+  <p class="jhint" id="jHint" style="display:none;">Это ваши личные записи — их видите только вы. Дневники клиентов — во вкладке «Клиенты».</p>
   <div class="atabs" id="kindTabs" style="background:var(--as);">
     <div class="atab act" id="kt-kpt" onclick="setKind('kpt')">КПТ</div>
     <div class="atab" id="kt-free" onclick="setKind('free')">Дневник</div>
@@ -1007,6 +1017,25 @@ function updateBadge(){
   const b=document.getElementById('mBadge');
   if(isViewing()){b.textContent='Дневник клиента';b.className='mbadge mb-v';}
   else{b.textContent='Мой дневник';b.className='mbadge mb-o';}
+  updateJournalHead();
+}
+
+// Психологу — явно различать свой дневник и дневник клиента.
+// У обычных клиентов всё как раньше: вкладка и заголовок «Записи».
+function updateJournalHead(){
+  const v=isViewing(), psy=isPsy();
+  document.getElementById('clientBanner').style.display=v?'flex':'none';
+  document.getElementById('cbName').textContent=v?(viewingClient.label||viewingClient.email):'';
+  document.getElementById('jTop').style.display=v?'none':'flex';
+  document.getElementById('jHead').textContent=psy?'Мой личный дневник':'Записи';
+  document.getElementById('jHint').style.display=(psy&&!v)?'block':'none';
+  document.getElementById('t-journal').textContent=psy?'Мои записи':'Записи';
+}
+
+// Вкладка «Записи» / «Мои записи» всегда открывает свой дневник
+function openOwnJournal(){
+  if(isViewing()){viewingClient=null;updateBadge();}
+  switchTab('journal');
 }
 
 function switchTab(t){
@@ -1015,6 +1044,11 @@ function switchTab(t){
   document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
   document.getElementById('t-'+t).classList.add('active');
   document.getElementById('v-'+t).classList.add('active');
+  // дневник клиента открыт из «Клиентов» — подсвечиваем «Клиенты», а не «Мои записи»
+  if(t==='journal'&&isViewing()){
+    document.getElementById('t-journal').classList.remove('active');
+    document.getElementById('t-clients').classList.add('active');
+  }
   if(t==='journal') renderJ();
   if(t==='write') showChooser();
   if(t==='clients'){viewingClient=null;updateBadge();renderClients();}
@@ -1339,17 +1373,12 @@ async function saveLabel(){
 function openClient(id){
   viewingClient=clients.find(c=>c.id===id)||null;
   updateBadge();
-  document.getElementById('btnBackToClients').style.display='inline-block';
-  document.getElementById('jHead').textContent=
-    viewingClient.label||viewingClient.email;
   switchTab('journal');
 }
 
 function backToClients(){
   viewingClient=null;
   updateBadge();
-  document.getElementById('btnBackToClients').style.display='none';
-  document.getElementById('jHead').textContent='Записи';
   switchTab('clients');
 }
 
@@ -1788,8 +1817,6 @@ async function finishFree(){
 // Психолог мог писать свою запись, пока смотрел дневник клиента
 function backToOwnDiary(){
   viewingClient=null;updateBadge();
-  document.getElementById('btnBackToClients').style.display='none';
-  document.getElementById('jHead').textContent='Записи';
 }
 
 // Не дать закрыть страницу с несохранённым текстом
