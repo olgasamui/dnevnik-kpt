@@ -245,6 +245,10 @@ input::placeholder,textarea::placeholder{color:var(--ink-light);}
 .cinfo{flex:1;min-width:0;}
 .clabel{font-size:15px;font-weight:600;color:var(--ink);margin-bottom:2px;}
 .clabel.empty-label{color:var(--ink-light);font-weight:400;font-style:italic;}
+.namelink{color:var(--accent);font-weight:600;cursor:pointer;border-bottom:1.5px dashed var(--aw);}
+.namelink:hover{color:var(--aw);}
+.nedit{font-size:13px;cursor:pointer;margin-left:6px;opacity:.55;}
+.nedit:hover{opacity:1;}
 .cmail{font-size:12px;color:var(--ink-light);word-break:break-all;}
 .cstatus{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:3px 9px;border-radius:12px;background:var(--nyb);color:#fff;}
 .cacts{display:flex;gap:6px;flex-wrap:wrap;}
@@ -363,6 +367,22 @@ textarea.free-ta{min-height:320px;font-size:15px;line-height:1.75;resize:vertica
   <button class="mclose" onclick="cm('mSettings')">✕</button>
   <div class="mtitle">Настройки</div>
   <div id="setBody"></div>
+</div>
+</div>
+
+<!-- ИМЯ КЛИЕНТА -->
+<div class="overlay" id="mName">
+<div class="modal">
+  <div class="mtitle">Как назвать клиента?</div>
+  <div class="msub" id="nameMail"></div>
+  <label>Имя или подпись</label>
+  <input type="text" id="nameInput" maxlength="60" placeholder="например «Анна, по средам»" onkeydown="if(event.key==='Enter')saveName()">
+  <p style="font-size:12px;color:var(--ink-light);margin-top:7px;line-height:1.6;">Клиент не видит, как он у вас записан. Имя можно поменять в любой момент.</p>
+  <div class="ferr" id="nameErr"></div>
+  <div class="brow">
+    <button class="btn bs" onclick="cm('mName')">Позже</button>
+    <button class="btn bp" onclick="saveName()">Сохранить</button>
+  </div>
 </div>
 </div>
 
@@ -1204,9 +1224,11 @@ async function renderClients(){
 
   el.innerHTML=clients.map(c=>{
     const pend=c.psychologist_status==='pending';
-    const name=c.label
-      ? `<div class="clabel">${x(c.label)}</div>`
-      : `<div class="clabel empty-label">без подписи</div>`;
+    const name=pend
+      ? ''
+      : c.label
+        ? `<div class="clabel">${x(c.label)}<span class="nedit" title="Переименовать" onclick="openName('${c.id}')">✏️</span></div>`
+        : `<div class="clabel"><span class="namelink" onclick="openName('${c.id}')">✏️ Назовите клиента</span></div>`;
     const locked = !pend && !fullAccess && c.id!==effKept;
     const isKept = !pend && !paid && c.id===effKept;
     // выбрать можно только когда оплата кончилась и выбор ещё не сделан
@@ -1243,6 +1265,30 @@ async function setKept(id){
 async function acceptClient(id){
   const {error}=await sb.rpc('accept_client',{p_client:id});
   if(error){alert(error.message);return;}
+  await renderClients();
+  openName(id);   // сразу предложить назвать нового клиента
+}
+
+// Окошко «Как назвать клиента?» — после принятия заявки и по ✏️ в карточке
+let nameClientId=null;
+function openName(id){
+  nameClientId=id;
+  const c=clients.find(z=>z.id===id);
+  document.getElementById('nameMail').textContent=c?c.email:'';
+  document.getElementById('nameInput').value=c?c.label:'';
+  document.getElementById('nameErr').classList.remove('show');
+  document.getElementById('mName').classList.add('open');
+  setTimeout(()=>document.getElementById('nameInput').focus(),100);
+}
+async function saveName(){
+  const val=document.getElementById('nameInput').value.trim();
+  const err=document.getElementById('nameErr');
+  if(!val){err.textContent='Впишите имя или нажмите «Позже»';err.classList.add('show');return;}
+  const {error}=await sb.from('client_labels').upsert({
+    psychologist_id:user.id, client_id:nameClientId, label:val
+  });
+  if(error){err.textContent='Не удалось сохранить: '+error.message;err.classList.add('show');return;}
+  cm('mName');
   renderClients();
 }
 async function declineClient(id){
