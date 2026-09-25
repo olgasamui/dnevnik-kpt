@@ -1,0 +1,3 @@
+# Настройка GitHub Pages: эти файлы не публикуются на сайте kpt-dnevnik.com
+exclude:
+  - CLAUDE.md
