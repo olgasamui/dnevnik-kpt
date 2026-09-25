@@ -308,6 +308,9 @@ textarea.free-ta{min-height:320px;font-size:15px;line-height:1.75;resize:vertica
   </div>
   <div class="ferr" id="authErr"></div>
   <div class="fok" id="authOk"></div>
+  <div id="resendWrap" style="display:none;margin-top:8px;">
+    <button class="btn bs" id="resendBtn" style="width:100%;" onclick="resendConfirm()">Отправить письмо ещё раз</button>
+  </div>
   <button class="btn bp" id="authBtn" style="width:100%;padding:13px;margin-top:16px;" onclick="doAuth()">Войти</button>
   <div id="forgotWrap" style="text-align:center;margin-top:10px;">
     <span class="alink" onclick="switchAuth('forgot')">Забыли пароль?</span>
@@ -833,6 +836,7 @@ function authErrText(e){
 function clearAuthMsg(){
   document.getElementById('authErr').classList.remove('show');
   document.getElementById('authOk').classList.remove('show');
+  document.getElementById('resendWrap').style.display='none';
 }
 function showAuthErr(m){clearAuthMsg();const e=document.getElementById('authErr');e.textContent=m;e.classList.add('show');}
 function showAuthOk(m){clearAuthMsg();const e=document.getElementById('authOk');e.textContent=m;e.classList.add('show');}
@@ -847,10 +851,12 @@ async function doAuth(){
   btn.disabled=true;btn.textContent='Подождите…';
   try{
     if(authMode==='reg'){
-      const {data,error}=await sb.auth.signUp({email,password:pass});
+      const {data,error}=await sb.auth.signUp({email,password:pass,
+        options:{emailRedirectTo:location.origin+location.pathname}});
       if(error) throw error;
       if(data.user&&!data.session){
-        showAuthOk('✓ Аккаунт создан! Проверьте почту и перейдите по ссылке из письма.');
+        showAuthOk('✓ Мы отправили письмо на '+email+'. Откройте его и нажмите «Подтвердить почту». '+
+          'Если письма нет несколько минут — загляните в «Спам».');
         btn.disabled=false;btn.textContent='Создать аккаунт';return;
       }
       user=data.user;
@@ -863,8 +869,23 @@ async function doAuth(){
     await startApp();
   }catch(e){
     showAuthErr(authErrText(e));
+    if(/Email not confirmed/i.test(e&&e.message||'')) document.getElementById('resendWrap').style.display='block';
     btn.disabled=false;btn.textContent=AUTH_BTN[authMode];
   }
+}
+
+// Повторно отправить письмо «Подтвердите почту»
+async function resendConfirm(){
+  const email=document.getElementById('aEmail').value.trim();
+  if(!email){showAuthErr('Введите email, с которым вы регистрировались');return;}
+  const btn=document.getElementById('resendBtn');
+  btn.disabled=true;btn.textContent='Отправляю…';
+  const {error}=await sb.auth.resend({type:'signup',email,
+    options:{emailRedirectTo:location.origin+location.pathname}});
+  btn.disabled=false;btn.textContent='Отправить письмо ещё раз';
+  if(error){showAuthErr(authErrText(error));document.getElementById('resendWrap').style.display='block';return;}
+  showAuthOk('✓ Отправили письмо ещё раз на '+email+'. Откройте его и нажмите «Подтвердить почту». '+
+    'Если письма нет несколько минут — загляните в «Спам».');
 }
 
 // ============================================================
@@ -894,8 +915,10 @@ function expiredLink(){
   history.replaceState(null,'',location.pathname);
   document.getElementById('mNewPass').classList.remove('open');
   document.getElementById('mAuth').classList.add('open');
-  switchAuth('forgot');
-  showAuthErr('Ссылка из письма устарела или уже была использована. Введите email — пришлём новую.');
+  switchAuth('log');
+  showAuthErr('Ссылка из письма устарела или уже была использована. '+
+    'Если вы подтверждали почту — просто войдите. '+
+    'Если сбрасывали пароль — нажмите «Забыли пароль?» и запросите новую ссылку.');
 }
 
 async function setNewPassword(){
