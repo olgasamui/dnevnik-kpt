@@ -320,7 +320,36 @@ textarea.free-ta{min-height:320px;font-size:15px;line-height:1.75;resize:vertica
 .setrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;}
 .free-empty{color:var(--ink-light);font-style:italic;}
 
-@media(max-width:500px){.card{padding:18px 14px;}.ctitle{font-size:20px;}.main{padding:16px 12px 60px;}.header{padding:11px 13px;}}
+/* СКАЧАТЬ МОИ ЗАПИСИ — страница для сохранения в PDF */
+.exp-link{text-align:center;margin:18px 0 6px;}
+.exp-link span{font-size:13px;color:var(--aw);cursor:pointer;text-decoration:underline;}
+#exportView{display:none;position:fixed;inset:0;z-index:700;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;}
+#exportView.open{display:block;}
+.exp-bar{position:sticky;top:0;z-index:2;display:flex;gap:10px;justify-content:space-between;align-items:center;padding:10px 16px;background:var(--paper);border-bottom:1px solid var(--as);}
+.exp-bar .btn{width:auto;padding:10px 16px;margin:0;}
+.exp-hint{max-width:760px;margin:14px auto 0;padding:0 16px;font-size:12px;color:var(--ink-light);line-height:1.6;}
+.exp-doc{max-width:760px;margin:14px auto 40px;background:#fff;border-radius:14px;padding:32px 28px;color:#1f2a22;box-shadow:0 4px 20px var(--shadow);}
+.exp-doc h1{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:30px;color:var(--accent);margin:0 0 4px;}
+.exp-meta{font-size:12px;color:#6b776e;margin-bottom:22px;line-height:1.6;}
+.exp-doc h2{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:23px;color:var(--accent);margin:28px 0 10px;padding-bottom:6px;border-bottom:2px solid var(--as);}
+.exp-e{padding:14px 0;border-bottom:1px solid #e6ebe5;break-inside:avoid;page-break-inside:avoid;}
+.exp-d{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--accent);margin-bottom:8px;}
+.exp-l{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#7b877e;margin:10px 0 3px;}
+.exp-t{font-size:14px;line-height:1.7;}
+.exp-t.g{border-left:3px solid var(--green);padding-left:10px;}
+.exp-n{font-size:13px;line-height:1.6;background:#fbf7e6;border-left:3px solid #d4a800;padding:7px 10px;margin-top:6px;border-radius:4px;}
+.exp-n b{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#8a7a30;display:block;margin-bottom:2px;}
+.exp-empty{font-size:14px;color:#7b877e;font-style:italic;}
+@media print{
+  @page{margin:16mm 14mm;}
+  body{background:#fff!important;}
+  body > *:not(#exportView){display:none!important;}
+  #exportView{position:static!important;display:block!important;overflow:visible!important;background:#fff!important;}
+  .exp-bar,.exp-hint{display:none!important;}
+  .exp-doc{box-shadow:none!important;margin:0!important;padding:0!important;max-width:none!important;border-radius:0!important;}
+}
+
+@media(max-width:500px){.exp-doc{padding:22px 16px;border-radius:0;}.card{padding:18px 14px;}.ctitle{font-size:20px;}.main{padding:16px 12px 60px;}.header{padding:11px 13px;}}
 </style>
 </head>
 <body>
@@ -426,6 +455,20 @@ textarea.free-ta{min-height:320px;font-size:15px;line-height:1.75;resize:vertica
 </div>
 </div>
 
+<!-- СКАЧАТЬ МОИ ЗАПИСИ: что включить -->
+<div class="overlay" id="mExport">
+<div class="modal">
+  <button class="mclose" onclick="cm('mExport')">✕</button>
+  <div class="mtitle">Скачать мои записи</div>
+  <div class="msub">Все ваши записи за всё время — одним аккуратным файлом PDF. Его можно сохранить на телефон или компьютер, в облако или распечатать.</div>
+  <label class="opt sel"><input type="radio" name="expKind" value="all" checked onchange="expKindChange()"><span>Всё — КПТ и дневник</span></label>
+  <label class="opt"><input type="radio" name="expKind" value="kpt" onchange="expKindChange()"><span>Только записи КПТ</span></label>
+  <label class="opt"><input type="radio" name="expKind" value="free" onchange="expKindChange()"><span>Только дневник</span></label>
+  <div class="ferr" id="expErr"></div>
+  <div class="brow"><button class="btn bp" id="expBtn" onclick="buildExport()">Подготовить файл</button></div>
+</div>
+</div>
+
 <!-- ИМЯ КЛИЕНТА -->
 <div class="overlay" id="mName">
 <div class="modal">
@@ -484,6 +527,15 @@ textarea.free-ta{min-height:320px;font-size:15px;line-height:1.75;resize:vertica
   <div class="tab active" id="t-journal" onclick="openOwnJournal()">Записи</div>
   <div class="tab" id="t-write" onclick="switchTab('write')">+ Новая запись</div>
   <div class="tab" id="t-clients" onclick="switchTab('clients')" style="display:none;">Клиенты</div>
+</div>
+
+<div id="exportView">
+  <div class="exp-bar">
+    <button class="btn bs" onclick="closeExport()">← Назад</button>
+    <button class="btn bp" onclick="printExport()">Сохранить как PDF</button>
+  </div>
+  <div class="exp-hint">Нажмите «Сохранить как PDF». На iPhone в открывшемся окне нажмите «Поделиться» → «Сохранить в Файлы». На Android выберите принтер «Сохранить как PDF». На компьютере — «Сохранить как PDF» в окне печати.</div>
+  <div class="exp-doc" id="expDoc"></div>
 </div>
 
 <div class="main" id="mainWrap" style="display:none;">
@@ -1168,6 +1220,10 @@ async function openSettings(){
       <div class="ferr" id="chErr"></div>
       <div class="fok" id="chOk"></div>
       <div class="brow"><button class="btn bs" onclick="changePassword()">Сохранить новый пароль</button></div>
+
+      <div class="sect-head">Мои записи</div>
+      <p style="font-size:12px;color:var(--ink-light);margin:-4px 0 10px;line-height:1.6;">Ваши записи принадлежат вам. Скачать их можно в любой момент — красивым файлом PDF.</p>
+      <div class="brow"><button class="btn bs" onclick="cm('mSettings');openExport()">📥 Скачать мои записи</button></div>
       <hr style="border:none;border-top:1px solid var(--as);margin:20px 0;">`;
 
   if(isPsy()){
@@ -1604,7 +1660,7 @@ function drawKpt(){
     html+=`<div class="dgroup"><div class="dgroup-lbl">${dayLabel(ds)}</div>`+
           groups[ds].map(buildCard).join('')+`</div>`;
   }
-  box.innerHTML=html;
+  box.innerHTML=html+expLink();
 }
 
 function buildCard(e){
@@ -1753,6 +1809,97 @@ function shareDefault(kind){
   return (v===true||v===false)?v:(kind==='kpt');
 }
 
+// ============================================================
+//  СКАЧАТЬ МОИ ЗАПИСИ — только свои записи (психолог записи клиента скачать не может)
+//  Страница собирается прямо в браузере и сохраняется через «Печать → PDF».
+// ============================================================
+function expLink(){
+  return isViewing()?'':`<div class="exp-link"><span onclick="openExport()">📥 Скачать мои записи</span></div>`;
+}
+function openExport(){
+  if(isViewing()) return;
+  document.getElementById('expErr').classList.remove('show');
+  expKindChange();
+  document.getElementById('mExport').classList.add('open');
+}
+function expKindChange(){
+  document.querySelectorAll('#mExport .opt').forEach(l=>l.classList.toggle('sel',l.querySelector('input').checked));
+}
+const EXP_SEC=[['situation','Ситуация'],['thoughts','Мысли и убеждения'],['body_reaction','Реакции тела и действия'],
+  ['needs_text','Потребности'],['constructive','Конструктивные мысли'],['author','Поведение автора жизни']];
+function expDate(d,withTime){
+  const s=new Date(d).toLocaleDateString('ru',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  return withTime?s+' · '+new Date(d).toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'}):s;
+}
+function expNotes(e,sec){
+  return (e.notes||[]).filter(n=>(n.section||'')===sec).map(n=>
+    `<div class="exp-n"><b>${n.author_id===user.id?'Мой комментарий':'Комментарий психолога'}</b>${x(n.text)}</div>`).join('');
+}
+function expKpt(e){
+  const em=e.emotions||[], di=e.distortions||[], ne=e.needs||[];
+  let h=`<div class="exp-e"><div class="exp-d">${x(expDate(e.created_at,true))}</div>`;
+  const sec=(f,l)=>{
+    let v=unpackText(e[f])||'';
+    if(f==='needs_text'&&ne.length) v=ne.join(', ')+(v?'\n'+v:'');
+    const g=f==='constructive'||f==='author';
+    const notes=expNotes(e,f);
+    return (v.trim()||notes)?`<div class="exp-l">${l}</div>${v.trim()?`<div class="exp-t${g?' g':''}">${x(v)}</div>`:''}${notes}`:'';
+  };
+  h+=sec('situation','Ситуация');
+  if(em.length) h+=`<div class="exp-l">Эмоции</div><div class="exp-t">${em.map(m=>x(m.name)+(m.intensity?' — '+m.intensity:'')).join(', ')}</div>`;
+  h+=sec('thoughts','Мысли и убеждения');
+  if(di.length) h+=`<div class="exp-l">Когнитивные искажения</div><div class="exp-t">${di.map(x).join(', ')}</div>`;
+  EXP_SEC.slice(2).forEach(([f,l])=>h+=sec(f,l));
+  const gen=expNotes(e,'');
+  if(gen) h+=`<div class="exp-l">Общие комментарии</div>${gen}`;
+  return h+'</div>';
+}
+function expFree(e){
+  return `<div class="exp-e"><div class="exp-d">${x(expDate(e.created_at,true))}</div><div class="exp-t">${x(unpackText(e.body))}</div></div>`;
+}
+async function buildExport(){
+  const kind=document.querySelector('#mExport input[name=expKind]:checked').value;
+  const btn=document.getElementById('expBtn'), err=document.getElementById('expErr');
+  btn.disabled=true;btn.textContent='Собираю записи…';err.classList.remove('show');
+  try{
+    let kpt=[], free=[];
+    if(kind!=='free'){
+      const r=await sb.from('entries').select('*,notes(*)').eq('user_id',user.id).order('created_at',{ascending:true});
+      if(r.error) throw r.error; kpt=r.data||[];
+    }
+    if(kind!=='kpt'){
+      const r=await sb.from('free_entries').select('*').eq('user_id',user.id).order('created_at',{ascending:true});
+      if(r.error) throw r.error; free=(r.data||[]).filter(e=>(unpackText(e.body)||'').trim());
+    }
+    const today=new Date().toLocaleDateString('ru',{day:'numeric',month:'long',year:'numeric'});
+    const what={all:'КПТ и дневник',kpt:'записи КПТ',free:'дневник'}[kind];
+    let h=`<h1>КПТ-дневник</h1><div class="exp-meta">${x(user.email)} · ${what} · скачано ${today}<br>
+      Записей КПТ: ${kind==='free'?'—':kpt.length} · записей дневника: ${kind==='kpt'?'—':free.length}</div>`;
+    if(kind!=='free') h+=`<h2>Записи КПТ</h2>`+(kpt.length?kpt.map(expKpt).join(''):'<div class="exp-empty">Записей КПТ пока нет.</div>');
+    if(kind!=='kpt') h+=`<h2>Дневник</h2>`+(free.length?free.map(expFree).join(''):'<div class="exp-empty">Записей в дневнике пока нет.</div>');
+    document.getElementById('expDoc').innerHTML=h;
+    cm('mExport');
+    const v=document.getElementById('exportView');
+    v.classList.add('open');v.scrollTop=0;
+    document.body.style.overflow='hidden';
+  }catch(e){
+    console.error(e);
+    err.textContent='Не удалось собрать записи: '+dbErr(e);err.classList.add('show');
+  }finally{
+    btn.disabled=false;btn.textContent='Подготовить файл';
+  }
+}
+function closeExport(){
+  document.getElementById('exportView').classList.remove('open');
+  document.body.style.overflow='';
+}
+function printExport(){
+  const t=document.title;
+  document.title='КПТ-дневник — мои записи '+new Date().toISOString().slice(0,10);   // так назовётся файл
+  window.print();
+  setTimeout(()=>{document.title=t;},1000);
+}
+
 function nch(c){return{yellow:'#d4a800',blue:'#4a9de0',green:'#3aaa5a',pink:'#d04090'}[c]||'transparent';}
 function x(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');}
 function togCard(id){document.getElementById('ec-'+id).classList.toggle('open');}
@@ -1883,7 +2030,7 @@ function renderFreeList(){
   rest.forEach(e=>{const ds=new Date(e.created_at).toDateString();(groups[ds]=groups[ds]||[]).push(e);});
   box.innerHTML=top+Object.keys(groups).map(ds=>
     `<div class="dgroup"><div class="dgroup-lbl">${dayLabel(ds)}</div>${groups[ds].map(buildFreeCard).join('')}</div>`
-  ).join('');
+  ).join('')+(q?'':expLink());
 }
 
 // «Новая» = открыта психологу или изменена после его последнего «✓ Прочитано».
