@@ -93,15 +93,11 @@ input::placeholder,textarea::placeholder{color:var(--ink-light);}
 .ecard.lc-green{border-left-color:var(--ngb);}
 .ecard.lc-pink{border-left-color:var(--npb);}
 .ehead{padding:14px 16px;cursor:pointer;display:flex;align-items:flex-start;gap:10px;}
-.etime{font-size:11px;font-weight:700;color:var(--ink-light);letter-spacing:.06em;margin-top:2px;flex-shrink:0;width:42px;display:flex;flex-direction:column;align-items:flex-start;gap:7px;}
-/* значок «видно психологу» на закрытой карточке — нажатие сразу переключает */
-.vico{font-size:14px;line-height:1;padding:4px 6px;border-radius:10px;cursor:pointer;border:1px solid;background:none;}
-.vico.on{background:var(--gs);border-color:var(--green);}
-.vico.off{background:var(--ps);border-color:var(--pu);}
-/* та же видимость словами — мелко, под текстом записи */
-.vtxt{display:inline-block;font-size:11px;font-weight:600;margin-top:6px;cursor:pointer;}
-.vtxt.on{color:#3a6a4a;}
-.vtxt.off{color:#6a5a90;}
+.etime{font-size:11px;font-weight:700;color:var(--ink-light);letter-spacing:.06em;margin-top:2px;flex-shrink:0;width:38px;}
+/* видимость на закрытой карточке: значок и слова вместе, нажатие сразу переключает */
+.vchip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;line-height:1;padding:4px 9px;margin-top:7px;border-radius:12px;cursor:pointer;border:1px solid;font-family:'Mulish',sans-serif;}
+.vchip.on{background:var(--gs);border-color:#b9d3c0;color:#3a6a4a;}
+.vchip.off{background:var(--ps);border-color:#cfc6e3;color:#5a4a80;}
 .epreview{flex:1;min-width:0;}
 .esit-text{font-size:14px;color:var(--ink);line-height:1.5;margin-bottom:6px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
 .etags{display:flex;flex-wrap:wrap;gap:4px;}
@@ -410,7 +406,7 @@ textarea.free-ta{min-height:320px;font-size:15px;line-height:1.75;resize:vertica
 <div class="overlay" id="mShare">
 <div class="modal">
   <div class="mtitle">Что увидит психолог</div>
-  <div class="msub">Психолог видит только те записи, которые вы ему открываете. Любую запись потом можно открыть или скрыть — значком 👁 / 🔒 на карточке.</div>
+  <div class="msub">Психолог видит только те записи, которые вы ему открываете. Любую запись потом можно открыть или скрыть — нажатием на «👁 Видна психологу» / «🔒 Только для меня» на карточке.</div>
   <div id="shOld">
     <div class="sect-head" id="shOldHead">Записи, которые у вас уже есть</div>
     <label class="opt"><input type="radio" name="shOld" value="all" onchange="shOldChange()"><span>Открыть все</span></label>
@@ -905,6 +901,16 @@ function switchAuth(mode){
 }
 
 // Понятные сообщения вместо английских ошибок Supabase
+// Ошибки базы — понятным русским текстом.
+// «permission denied» / JWT = сайт больше не считает человека вошедшим (вышел в другой вкладке, сессия истекла).
+function dbErr(e){
+  const m=(e&&e.message)||String(e||'');
+  if(/permission denied|jwt|not authenticated|invalid claim/i.test(m))
+    return 'Похоже, вы вышли из аккаунта (например, в другой вкладке). Обновите страницу и войдите снова.';
+  if(/failed to fetch|network/i.test(m)) return 'Нет связи с сервером. Проверьте интернет и попробуйте ещё раз.';
+  return m;
+}
+
 function authErrText(e){
   const m=(e&&e.message)||String(e||'Ошибка');
   if(/Invalid login/i.test(m)) return 'Неверный email или пароль';
@@ -1192,7 +1198,7 @@ async function openSettings(){
           <button class="${shareDefault('free')?'abtn':'shbtn off'}" onclick="setShareDefault(false)">🔒 Только для меня</button>
         </div>
         <p style="font-size:12px;color:var(--ink-light);margin-top:6px;line-height:1.6;">
-          Так будет у каждой новой записи. Любую запись можно открыть или скрыть отдельно — значком 👁 / 🔒 на карточке.
+          Так будет у каждой новой записи. Любую запись можно открыть или скрыть отдельно — нажатием на «👁 Видна психологу» / «🔒 Только для меня» на карточке.
         </p>
         <p style="font-size:12px;color:var(--ink-light);margin-top:6px;line-height:1.6;">
           При отключении все ваши записи остаются у вас — психолог просто теряет к ним доступ.
@@ -1230,7 +1236,7 @@ async function linkPsy(){
   const err=document.getElementById('setErr');
   if(!code){err.textContent='Введите код';err.classList.add('show');return;}
   const {error}=await sb.rpc('link_psychologist',{p_code:code});
-  if(error){err.textContent=error.message;err.classList.add('show');return;}
+  if(error){err.textContent=dbErr(error);err.classList.add('show');return;}
   await loadProfile();
   cm('mSettings');
   openShareDialog(true);
@@ -1238,7 +1244,7 @@ async function linkPsy(){
 
 async function setShareDefault(v){
   const {error}=await sb.from('profiles').update({share_new_by_default:v}).eq('id',user.id);
-  if(error){alert('Не удалось сохранить: '+error.message);return;}
+  if(error){alert('Не удалось сохранить: '+dbErr(error));return;}
   profile.share_new_by_default=v;
   await openSettings();
 }
@@ -1330,7 +1336,7 @@ async function saveShareChoice(){
 async function unlinkPsy(){
   if(!confirm('Отключить психолога? Ваши записи останутся у вас.')) return;
   const {error}=await sb.rpc('unlink_psychologist');
-  if(error){alert('Ошибка: '+error.message);return;}
+  if(error){alert('Ошибка: '+dbErr(error));return;}
   await openSettings();
 }
 
@@ -1462,13 +1468,13 @@ async function setKept(id){
   const who=c?(c.label||c.email):'этого клиента';
   if(!confirm('Оставить доступным '+who+'?\n\nЭто решение принимается один раз — поменять его потом будет нельзя.\n\nДоступ к остальным клиентам закроется до оплаты, их записи сохранятся.')) return;
   const {error}=await sb.rpc('set_kept_client',{p_client:id});
-  if(error){alert(error.message);return;}
+  if(error){alert(dbErr(error));return;}
   renderClients();
 }
 
 async function acceptClient(id){
   const {error}=await sb.rpc('accept_client',{p_client:id});
-  if(error){alert(error.message);return;}
+  if(error){alert(dbErr(error));return;}
   await renderClients();
   openName(id);   // сразу предложить назвать нового клиента
 }
@@ -1491,14 +1497,14 @@ async function saveName(){
   const {error}=await sb.from('client_labels').upsert({
     psychologist_id:user.id, client_id:nameClientId, label:val
   });
-  if(error){err.textContent='Не удалось сохранить: '+error.message;err.classList.add('show');return;}
+  if(error){err.textContent='Не удалось сохранить: '+dbErr(error);err.classList.add('show');return;}
   cm('mName');
   renderClients();
 }
 async function declineClient(id){
   if(!confirm('Отклонить заявку?')) return;
   const {error}=await sb.rpc('decline_client',{p_client:id});
-  if(error){alert(error.message);return;}
+  if(error){alert(dbErr(error));return;}
   renderClients();
 }
 
@@ -1519,7 +1525,7 @@ async function removeClientFromModal(){
   const who=c?(c.label||c.email):'этим клиентом';
   if(!confirm('Завершить работу с '+who+'?\n\nВы перестанете видеть его записи. У клиента всё сохранится.')) return;
   const {error}=await sb.rpc('remove_client',{p_client:labelClientId});
-  if(error){alert(error.message);return;}
+  if(error){alert(dbErr(error));return;}
   cm('mLabel');
   renderClients();
 }
@@ -1534,7 +1540,7 @@ async function saveLabel(){
     const {error}=await sb.from('client_labels').upsert({
       psychologist_id:user.id, client_id:labelClientId, label:val
     });
-    if(error){err.textContent=error.message;err.classList.add('show');return;}
+    if(error){err.textContent=dbErr(error);err.classList.add('show');return;}
   }
   cm('mLabel');
   renderClients();
@@ -1690,7 +1696,7 @@ function buildCard(e){
 
   return `<div class="ecard ${lc}" id="ec-${e.id}">
     <div class="ehead" onclick="togCard('${e.id}')">
-      <div class="etime">${time}${visIco('kpt',e)}</div>
+      <div class="etime">${time}</div>
       <div class="epreview">
         <div class="esit-text">${x(unpackText(e.situation)||'Без описания')}</div>
         <div class="etags">${tags}</div>
@@ -1710,19 +1716,13 @@ function noteHtml(n,e){
     canDel?`<button class="ndel" onclick="delNote('${n.id}');event.stopPropagation()">✕</button>`:''}</div>`;
 }
 
-// Та же видимость словами — мелкая подпись под текстом закрытой карточки
+// Видимость на закрытой карточке: «👁 Видна психологу» / «🔒 Только для меня»
+// (только у самого автора и только если психолог подключён)
 function visTxt(kind,e){
   if(isViewing()||!profile||!profile.psychologist_id) return '';
   const on=e.shared_with_psychologist;
-  return `<div><span class="vtxt ${on?'on':'off'}" onclick="quickShare('${kind}','${e.id}');event.stopPropagation()">${
-    on?'Видна психологу':'Только для меня'}</span></div>`;
-}
-// Значок видимости на закрытой карточке (только у самого автора и только если психолог подключён)
-function visIco(kind,e){
-  if(isViewing()||!profile||!profile.psychologist_id) return '';
-  const on=e.shared_with_psychologist;
-  return `<button class="vico ${on?'on':'off'}" title="${on?'Видна психологу — нажмите, чтобы скрыть':'Только для меня — нажмите, чтобы открыть психологу'}"
-    onclick="quickShare('${kind}','${e.id}');event.stopPropagation()">${on?'👁':'🔒'}</button>`;
+  return `<div><button class="vchip ${on?'on':'off'}" title="Нажмите, чтобы ${on?'скрыть от психолога':'открыть психологу'}"
+    onclick="quickShare('${kind}','${e.id}');event.stopPropagation()">${on?'👁 Видна психологу':'🔒 Только для меня'}</button></div>`;
 }
 function shareBtnHtml(kind,e){
   if(!profile.psychologist_id) return '';
@@ -1740,7 +1740,7 @@ async function quickShare(kind,id){
   redrawList();
   const {error}=await sb.from(kind==='kpt'?'entries':'free_entries')
     .update({shared_with_psychologist:nv}).eq('id',id);
-  if(error){e.shared_with_psychologist=!nv;redrawList();alert('Не удалось изменить: '+error.message);}
+  if(error){e.shared_with_psychologist=!nv;redrawList();alert('Не удалось изменить: '+dbErr(error));}
 }
 function redrawList(){
   const open=[...document.querySelectorAll('#jList .ecard.open')].map(c=>c.id);
@@ -1766,7 +1766,7 @@ async function addNote(eid,section){
   const d={entry_id:eid,author_id:user.id,text:txt,color:noteColorSel[key]||'yellow'};
   if(section) d.section=section;
   const {error}=await sb.from('notes').insert(d);
-  if(error){alert('Не удалось сохранить комментарий: '+error.message);return;}
+  if(error){alert('Не удалось сохранить комментарий: '+dbErr(error));return;}
   await renderJ();
   setTimeout(()=>{const c=document.getElementById('ec-'+eid);if(c)c.classList.add('open');},50);
 }
@@ -1774,14 +1774,14 @@ async function addNote(eid,section){
 async function delNote(id){
   if(!confirm('Удалить комментарий?')) return;
   const {error}=await sb.from('notes').delete().eq('id',id);
-  if(error){alert('Не удалось удалить: '+error.message);return;}
+  if(error){alert('Не удалось удалить: '+dbErr(error));return;}
   await renderJ();
 }
 
 async function delEntry(id){
   if(!confirm('Удалить запись?')) return;
   const {error}=await sb.from('entries').delete().eq('id',id);
-  if(error){alert('Не удалось удалить: '+error.message);return;}
+  if(error){alert('Не удалось удалить: '+dbErr(error));return;}
   await renderJ();
 }
 
@@ -1808,7 +1808,7 @@ async function saveEditSec(ev,eid,field){
   if(!ta) return;
   const upd={};upd[field]=packText(ta.value.trim());
   const {error}=await sb.from('entries').update(upd).eq('id',eid);
-  if(error){alert('Не удалось сохранить: '+error.message);return;}
+  if(error){alert('Не удалось сохранить: '+dbErr(error));return;}
   await renderJ();
   setTimeout(()=>{const c=document.getElementById('ec-'+eid);if(c)c.classList.add('open');},50);
 }
@@ -1917,7 +1917,7 @@ async function markDiaryRead(){
   const {error}=await sb.from('diary_reads').upsert({
     psychologist_id:user.id, client_id:viewingClient.id, read_at:last
   });
-  if(error){alert('Не удалось отметить: '+error.message);return;}
+  if(error){alert('Не удалось отметить: '+dbErr(error));return;}
   freeReadAt=last;
   renderFreeList();
   window.scrollTo({top:0,behavior:'smooth'});
@@ -1936,7 +1936,7 @@ function buildFreeCard(e){
   }
   return `<div class="ecard" id="fc-${e.id}">
     <div class="ehead" onclick="document.getElementById('fc-${e.id}').classList.toggle('open')">
-      <div class="etime">${time}${visIco('free',e)}</div>
+      <div class="etime">${time}</div>
       <div class="epreview"><div class="esit-text">${preview}</div>${visTxt('free',e)}</div>
       <div class="echev">▾</div>
     </div>
@@ -1947,7 +1947,7 @@ function buildFreeCard(e){
 async function delFree(id){
   if(!confirm('Удалить запись из дневника?')) return;
   const {error}=await sb.from('free_entries').delete().eq('id',id);
-  if(error){alert('Не удалось удалить: '+error.message);return;}
+  if(error){alert('Не удалось удалить: '+dbErr(error));return;}
   await renderFree();
 }
 
@@ -2004,7 +2004,7 @@ async function toggleEditorShare(){
   if(freeEdit.id){
     const {error}=await sb.from('free_entries')
       .update({shared_with_psychologist:freeEdit.shared}).eq('id',freeEdit.id);
-    if(error){freeEdit.shared=!freeEdit.shared;renderFreeShare();alert('Не удалось изменить: '+error.message);return;}
+    if(error){freeEdit.shared=!freeEdit.shared;renderFreeShare();alert('Не удалось изменить: '+dbErr(error));return;}
     const c=freeCache.find(z=>String(z.id)===String(freeEdit.id));
     if(c) c.shared_with_psychologist=freeEdit.shared;
   }
@@ -2196,7 +2196,7 @@ async function saveEntry(){
   };
   const {data:entry,error}=await sb.from('entries').insert(d).select().single();
   btn.disabled=false;btn.textContent='Сохранить ✓';
-  if(error){alert('Не удалось сохранить: '+error.message);return;}
+  if(error){alert('Не удалось сохранить: '+dbErr(error));return;}
 
   for(let i=1;i<=7;i++){const e=document.getElementById('s'+i);if(e)e.classList.remove('vis');}
   document.getElementById('sDone').classList.add('vis');
