@@ -93,7 +93,11 @@ input::placeholder,textarea::placeholder{color:var(--ink-light);}
 .ecard.lc-green{border-left-color:var(--ngb);}
 .ecard.lc-pink{border-left-color:var(--npb);}
 .ehead{padding:14px 16px;cursor:pointer;display:flex;align-items:flex-start;gap:10px;}
-.etime{font-size:11px;font-weight:700;color:var(--ink-light);letter-spacing:.06em;margin-top:2px;flex-shrink:0;width:38px;}
+.etime{font-size:11px;font-weight:700;color:var(--ink-light);letter-spacing:.06em;margin-top:2px;flex-shrink:0;width:42px;display:flex;flex-direction:column;align-items:flex-start;gap:7px;}
+/* значок «видно психологу» на закрытой карточке — нажатие сразу переключает */
+.vico{font-size:14px;line-height:1;padding:4px 6px;border-radius:10px;cursor:pointer;border:1px solid;background:none;}
+.vico.on{background:var(--gs);border-color:var(--green);}
+.vico.off{background:var(--ps);border-color:var(--pu);}
 .epreview{flex:1;min-width:0;}
 .esit-text{font-size:14px;color:var(--ink);line-height:1.5;margin-bottom:6px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
 .etags{display:flex;flex-wrap:wrap;gap:4px;}
@@ -292,6 +296,28 @@ textarea.free-ta{min-height:320px;font-size:15px;line-height:1.75;resize:vertica
 .free-status{font-size:12px;color:var(--ink-light);margin-left:auto;}
 .free-status.err{color:var(--err);}
 .free-full{white-space:normal;}
+.free-sharetop{margin:6px 0 12px;}
+/* психолог: блок новых записей дневника — сплошным текстом */
+.newblk{background:var(--paper);border:1.5px solid var(--green);border-radius:16px;padding:18px 18px 16px;margin-bottom:22px;}
+.newblk-h{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:22px;color:var(--accent);margin-bottom:2px;}
+.newblk-s{font-size:12px;color:var(--ink-light);margin-bottom:10px;line-height:1.6;}
+.newday{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin:18px 0 6px;padding-top:12px;border-top:1px solid var(--as);}
+.newday:first-of-type{border-top:none;padding-top:0;}
+.newtxt{font-size:15px;line-height:1.75;color:var(--ink);}
+.newblk .bnxt{margin-top:18px;}
+.oldhead{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-light);margin:4px 0 12px;}
+.cnew{font-size:12px;color:#3a6a4a;margin-top:4px;font-weight:600;}
+/* окошко доступа психолога */
+.opt{display:flex;gap:10px;align-items:flex-start;padding:11px 13px;border:1.5px solid var(--as);border-radius:12px;margin-bottom:8px;cursor:pointer;font-size:14px;line-height:1.5;text-transform:none;letter-spacing:0;font-weight:400;color:var(--ink);}
+.opt input{margin-top:3px;flex-shrink:0;width:auto;}
+.opt.sel{border-color:var(--green);background:var(--gs);}
+.pick{max-height:260px;overflow-y:auto;border:1px solid var(--as);border-radius:12px;padding:4px 10px;margin:4px 0 10px;}
+.pick label{display:flex;gap:9px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--as);font-size:13px;line-height:1.5;text-transform:none;letter-spacing:0;font-weight:400;color:var(--ink);margin:0;cursor:pointer;}
+.pick label:last-child{border-bottom:none;}
+.pick input{width:auto;margin-top:3px;flex-shrink:0;}
+.pick .pk-d{color:var(--ink-light);font-size:11px;font-weight:700;white-space:nowrap;}
+.pick-all{font-size:12px;color:var(--aw);cursor:pointer;text-decoration:underline;}
+.setrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;}
 .free-empty{color:var(--ink-light);font-style:italic;}
 
 @media(max-width:500px){.card{padding:18px 14px;}.ctitle{font-size:20px;}.main{padding:16px 12px 60px;}.header{padding:11px 13px;}}
@@ -373,6 +399,30 @@ textarea.free-ta{min-height:320px;font-size:15px;line-height:1.75;resize:vertica
   <button class="mclose" onclick="cm('mSettings')">✕</button>
   <div class="mtitle">Настройки</div>
   <div id="setBody"></div>
+</div>
+</div>
+
+<!-- ДОСТУП ПСИХОЛОГА К ЗАПИСЯМ -->
+<div class="overlay" id="mShare">
+<div class="modal">
+  <div class="mtitle">Что увидит психолог</div>
+  <div class="msub">Психолог видит только те записи, которые вы ему открываете. Любую запись потом можно открыть или скрыть — значком 👁 / 🔒 на карточке.</div>
+  <div id="shOld">
+    <div class="sect-head" id="shOldHead">Записи, которые у вас уже есть</div>
+    <label class="opt"><input type="radio" name="shOld" value="all" onchange="shOldChange()"><span>Открыть все</span></label>
+    <label class="opt"><input type="radio" name="shOld" value="pick" onchange="shOldChange()"><span>Выбрать, какие открыть</span></label>
+    <div id="shPickWrap" style="display:none;">
+      <span class="pick-all" onclick="shPickAll()">Отметить все / снять все</span>
+      <div class="pick" id="shPick"></div>
+    </div>
+    <label class="opt"><input type="radio" name="shOld" value="none" onchange="shOldChange()"><span>Пока не открывать</span></label>
+  </div>
+  <div class="sect-head">Новые записи</div>
+  <label class="opt"><input type="radio" name="shNew" value="1" onchange="shOldChange()"><span>👁 Сразу видны психологу</span></label>
+  <label class="opt"><input type="radio" name="shNew" value="0" onchange="shOldChange()"><span>🔒 По умолчанию только для меня</span></label>
+  <p style="font-size:12px;color:var(--ink-light);margin-top:4px;line-height:1.6;">Это можно поменять в «Настройках».</p>
+  <div class="ferr" id="shErr"></div>
+  <div class="brow"><button class="btn bp" id="shBtn" onclick="saveShareChoice()">Сохранить</button></div>
 </div>
 </div>
 
@@ -486,9 +536,9 @@ textarea.free-ta{min-height:320px;font-size:15px;line-height:1.75;resize:vertica
     <div class="card vis">
       <div class="sbadge"><div class="sdot"></div>Дневник</div>
       <h2 class="ctitle" id="freeDate"></h2>
+      <div class="free-sharetop" id="freeShareWrap"></div>
       <textarea id="fFree" class="free-ta" placeholder="Что происходило сегодня или за эту неделю…" oninput="onFreeInput()"></textarea>
       <div class="free-bar">
-        <span id="freeShareWrap"></span>
         <span class="free-status" id="freeStatus"></span>
       </div>
       <div class="nrow"><button class="bnxt" onclick="finishFree()">Готово</button></div>
@@ -1011,6 +1061,7 @@ async function startApp(){
   buildDists();
   updateBadge();
   await renderJ();
+  if(profile&&profile.psychologist_id&&profile.share_new_by_default==null) openShareDialog(false);
 }
 
 function updateBadge(){
@@ -1131,6 +1182,14 @@ async function openSettings(){
       : '<span style="color:var(--nyb)">заявка отправлена, ждём подтверждения</span>';
     h+=`<div class="sect-head">${myHead}</div>
         <p style="font-size:13px;color:var(--ink-soft);line-height:1.7;">Статус: ${st}</p>
+        <label style="margin-top:14px;">Новые записи</label>
+        <div class="setrow">
+          <button class="${shareDefault('free')?'shbtn on':'abtn'}" onclick="setShareDefault(true)">👁 Видны психологу</button>
+          <button class="${shareDefault('free')?'abtn':'shbtn off'}" onclick="setShareDefault(false)">🔒 Только для меня</button>
+        </div>
+        <p style="font-size:12px;color:var(--ink-light);margin-top:6px;line-height:1.6;">
+          Так будет у каждой новой записи. Любую запись можно открыть или скрыть отдельно — значком 👁 / 🔒 на карточке.
+        </p>
         <p style="font-size:12px;color:var(--ink-light);margin-top:6px;line-height:1.6;">
           При отключении все ваши записи остаются у вас — психолог просто теряет к ним доступ.
         </p>
@@ -1168,7 +1227,100 @@ async function linkPsy(){
   if(!code){err.textContent='Введите код';err.classList.add('show');return;}
   const {error}=await sb.rpc('link_psychologist',{p_code:code});
   if(error){err.textContent=error.message;err.classList.add('show');return;}
+  await loadProfile();
+  cm('mSettings');
+  openShareDialog(true);
+}
+
+async function setShareDefault(v){
+  const {error}=await sb.from('profiles').update({share_new_by_default:v}).eq('id',user.id);
+  if(error){alert('Не удалось сохранить: '+error.message);return;}
+  profile.share_new_by_default=v;
   await openSettings();
+}
+
+// ------------------------------------------------------------
+//  «Что увидит психолог» — после подключения психолога
+//  (и один раз у тех, кто подключился раньше и ещё не выбирал)
+// ------------------------------------------------------------
+let shItems=[];
+async function openShareDialog(withOld){
+  shItems=[];
+  document.getElementById('shErr').classList.remove('show');
+  document.querySelectorAll('#mShare input[type=radio]').forEach(r=>r.checked=false);
+  const v=profile.share_new_by_default;
+  if(v===true||v===false) document.querySelector(`#mShare input[name=shNew][value="${v?1:0}"]`).checked=true;
+  if(withOld){
+    const [k,f]=await Promise.all([
+      sb.from('entries').select('id,created_at,situation,shared_with_psychologist').eq('user_id',user.id),
+      sb.from('free_entries').select('id,created_at,body,shared_with_psychologist').eq('user_id',user.id)
+    ]);
+    (k.data||[]).forEach(e=>shItems.push({kind:'kpt',id:e.id,at:e.created_at,text:unpackText(e.situation)||'Без описания',on:e.shared_with_psychologist}));
+    (f.data||[]).forEach(e=>shItems.push({kind:'free',id:e.id,at:e.created_at,text:unpackText(e.body)||'',on:e.shared_with_psychologist}));
+    shItems=shItems.filter(i=>i.kind==='kpt'||i.text.trim());
+    shItems.sort((a,b)=>new Date(b.at)-new Date(a.at));
+  }
+  const nk=shItems.filter(i=>i.kind==='kpt').length, nf=shItems.length-nk;
+  document.getElementById('shOld').style.display=shItems.length?'block':'none';
+  document.getElementById('shOldHead').textContent='Записи, которые у вас уже есть ('+
+    [nk?nk+' КПТ':'',nf?nf+' в дневнике':''].filter(Boolean).join(', ')+')';
+  document.getElementById('shPick').innerHTML=shItems.map((i,n)=>{
+    const d=new Date(i.at).toLocaleDateString('ru',{day:'numeric',month:'short'});
+    const t=i.text.replace(/\s+/g,' ').trim();
+    return `<label><input type="checkbox" data-n="${n}" ${i.on?'checked':''}>
+      <span><span class="pk-d">${d} · ${i.kind==='kpt'?'КПТ':'Дневник'}</span><br>${x(t.length>70?t.slice(0,70)+'…':t)}</span></label>`;
+  }).join('');
+  shOldChange();
+  document.getElementById('mShare').classList.add('open');
+}
+function shOldChange(){
+  const o=document.querySelector('#mShare input[name=shOld]:checked');
+  document.getElementById('shPickWrap').style.display=o&&o.value==='pick'?'block':'none';
+  document.querySelectorAll('#mShare .opt').forEach(l=>l.classList.toggle('sel',l.querySelector('input').checked));
+}
+function shPickAll(){
+  const boxes=[...document.querySelectorAll('#shPick input')];
+  const all=boxes.every(b=>b.checked);
+  boxes.forEach(b=>b.checked=!all);
+}
+async function saveShareChoice(){
+  const err=document.getElementById('shErr');
+  const fail=m=>{err.textContent=m;err.classList.add('show');};
+  err.classList.remove('show');
+  const nw=document.querySelector('#mShare input[name=shNew]:checked');
+  const old=document.querySelector('#mShare input[name=shOld]:checked');
+  if(shItems.length&&!old) return fail('Выберите, что делать с записями, которые уже есть');
+  if(!nw) return fail('Выберите, как быть с новыми записями');
+  const btn=document.getElementById('shBtn');
+  btn.disabled=true;btn.textContent='Сохраняю…';
+  try{
+    const r=await sb.from('profiles').update({share_new_by_default:nw.value==='1'}).eq('id',user.id);
+    if(r.error) throw r.error;
+    profile.share_new_by_default=nw.value==='1';
+    if(shItems.length){
+      if(old.value==='pick'){
+        document.querySelectorAll('#shPick input').forEach(b=>shItems[+b.dataset.n].on=b.checked);
+      } else {
+        shItems.forEach(i=>i.on=old.value==='all');
+      }
+      for(const kind of ['kpt','free']){
+        const tbl=kind==='kpt'?'entries':'free_entries';
+        for(const on of [true,false]){
+          const ids=shItems.filter(i=>i.kind===kind&&i.on===on).map(i=>i.id);
+          if(!ids.length) continue;
+          const u=await sb.from(tbl).update({shared_with_psychologist:on}).in('id',ids);
+          if(u.error) throw u.error;
+        }
+      }
+    }
+    cm('mShare');
+    renderJ();
+  }catch(e){
+    console.error(e);
+    fail('Не удалось сохранить — проверьте интернет и попробуйте ещё раз.');
+  }finally{
+    btn.disabled=false;btn.textContent='Сохранить';
+  }
 }
 
 async function unlinkPsy(){
@@ -1198,7 +1350,20 @@ async function renderClients(){
     .select('client_id,label').eq('psychologist_id',user.id);
   const lmap={};(labels||[]).forEach(l=>lmap[l.client_id]=l.label);
 
-  clients=(data||[]).map(c=>({...c,label:lmap[c.id]||''}));
+  clients=(data||[]).map(c=>({...c,label:lmap[c.id]||'',newCount:0}));
+
+  // сколько новых записей в дневнике у каждого клиента (видны только открытые психологу)
+  const ids=clients.filter(c=>c.psychologist_status==='active').map(c=>c.id);
+  if(ids.length){
+    const [fe,rd]=await Promise.all([
+      sb.from('free_entries').select('user_id,body,updated_at').in('user_id',ids),
+      sb.from('diary_reads').select('client_id,read_at').eq('psychologist_id',user.id)
+    ]);
+    const rmap={};(rd.data||[]).forEach(r=>rmap[r.client_id]=r.read_at);
+    clients.forEach(c=>{
+      c.newCount=freeUnread((fe.data||[]).filter(e=>e.user_id===c.id), rmap[c.id]||null).length;
+    });
+  }
   clients.sort((a,b)=>(a.psychologist_status==='pending'?0:1)-(b.psychologist_status==='pending'?0:1));
 
   const active=clients.filter(c=>c.psychologist_status==='active').length;
@@ -1279,6 +1444,7 @@ async function renderClients(){
     }
     return `<div class="ccard ${pend?'pending':''} ${locked?'locked':''}">
       <div class="cinfo">${name}<div class="cmail">${x(c.email)}</div>
+        ${!locked&&c.newCount?`<div class="cnew">🟢 ${c.newCount} ${plural(c.newCount,'новая запись','новые записи','новых записей')} в дневнике</div>`:''}
         ${locked?'<div class="clocked">Записи сохранены, доступ вернётся после оплаты</div>':''}</div>
       ${pend?'<span class="cstatus">заявка</span>':''}
       ${isKept?`<span class="ckept">${fullAccess?'останется':'доступен'}</span>`:''}
@@ -1372,6 +1538,7 @@ async function saveLabel(){
 
 function openClient(id){
   viewingClient=clients.find(c=>c.id===id)||null;
+  if(viewingClient&&viewingClient.newCount) setKind('free',true);   // есть новое в дневнике — сразу туда
   updateBadge();
   switchTab('journal');
 }
@@ -1405,8 +1572,13 @@ async function renderJ(){
   if(jKind==='free') return renderFree();
   const box=document.getElementById('jList');
   box.innerHTML='<div class="gloading">Загрузка записей</div>';
-  const entries=await loadEntries();
-  entriesCache=entries;
+  entriesCache=await loadEntries();
+  drawKpt();
+}
+
+function drawKpt(){
+  const box=document.getElementById('jList');
+  const entries=entriesCache;
   if(!entries.length){
     box.innerHTML=`<div class="empty"><span class="empty-big">✦</span>${
       isViewing()?'У клиента пока нет открытых записей.':'Записей пока нет.<br>Нажмите «+ Новая запись»'}</div>`;
@@ -1508,17 +1680,13 @@ function buildCard(e){
 
   let acts='';
   if(!isViewing()){
-    const shown=e.shared_with_psychologist;
-    const shareBtn = profile.psychologist_id
-      ? `<button class="shbtn ${shown?'on':'off'}" onclick="toggleShare('${e.id}',${shown});event.stopPropagation()">
-           ${shown?'👁 Видна психологу':'🔒 Скрыта от психолога'}</button>` : '';
-    acts=`<div class="eacts">${shareBtn}
+    acts=`<div class="eacts">${shareBtnHtml('kpt',e)}
       <button class="abtn del" onclick="delEntry('${e.id}');event.stopPropagation()">Удалить</button></div>`;
   }
 
   return `<div class="ecard ${lc}" id="ec-${e.id}">
     <div class="ehead" onclick="togCard('${e.id}')">
-      <div class="etime">${time}</div>
+      <div class="etime">${time}${visIco('kpt',e)}</div>
       <div class="epreview">
         <div class="esit-text">${x(unpackText(e.situation)||'Без описания')}</div>
         <div class="etags">${tags}</div>
@@ -1537,18 +1705,47 @@ function noteHtml(n,e){
     canDel?`<button class="ndel" onclick="delNote('${n.id}');event.stopPropagation()">✕</button>`:''}</div>`;
 }
 
+// Значок видимости на закрытой карточке (только у самого автора и только если психолог подключён)
+function visIco(kind,e){
+  if(isViewing()||!profile||!profile.psychologist_id) return '';
+  const on=e.shared_with_psychologist;
+  return `<button class="vico ${on?'on':'off'}" title="${on?'Видна психологу — нажмите, чтобы скрыть':'Только для меня — нажмите, чтобы открыть психологу'}"
+    onclick="quickShare('${kind}','${e.id}');event.stopPropagation()">${on?'👁':'🔒'}</button>`;
+}
+function shareBtnHtml(kind,e){
+  if(!profile.psychologist_id) return '';
+  const on=e.shared_with_psychologist;
+  return `<button class="shbtn ${on?'on':'off'}" onclick="quickShare('${kind}','${e.id}');event.stopPropagation()">
+    ${on?'👁 Видна психологу':'🔒 Только для меня'}</button>`;
+}
+// Переключить видимость без перезагрузки списка; раскрытые карточки остаются раскрытыми
+async function quickShare(kind,id){
+  const cache=kind==='kpt'?entriesCache:freeCache;
+  const e=cache.find(z=>String(z.id)===String(id));
+  if(!e) return;
+  const nv=!e.shared_with_psychologist;
+  e.shared_with_psychologist=nv;
+  redrawList();
+  const {error}=await sb.from(kind==='kpt'?'entries':'free_entries')
+    .update({shared_with_psychologist:nv}).eq('id',id);
+  if(error){e.shared_with_psychologist=!nv;redrawList();alert('Не удалось изменить: '+error.message);}
+}
+function redrawList(){
+  const open=[...document.querySelectorAll('#jList .ecard.open')].map(c=>c.id);
+  if(jKind==='kpt') drawKpt(); else renderFreeList();
+  open.forEach(id=>{const c=document.getElementById(id);if(c)c.classList.add('open');});
+}
+// По умолчанию для новой записи: выбор клиента; если ещё не выбирал — как было раньше
+function shareDefault(kind){
+  const v=profile&&profile.share_new_by_default;
+  return (v===true||v===false)?v:(kind==='kpt');
+}
+
 function nch(c){return{yellow:'#d4a800',blue:'#4a9de0',green:'#3aaa5a',pink:'#d04090'}[c]||'transparent';}
 function x(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');}
 function togCard(id){document.getElementById('ec-'+id).classList.toggle('open');}
 function toggleSecNote(ev,eid,s){ev.stopPropagation();const f=document.getElementById('snf-'+eid+'-'+s);if(f)f.style.display=f.style.display==='none'?'block':'none';}
 function selC(dot,key,color){noteColorSel[key]=color;const p=dot.parentElement;if(p)p.querySelectorAll('.cdot').forEach(d=>d.classList.remove('sel'));dot.classList.add('sel');}
-
-async function toggleShare(id,cur){
-  const {error}=await sb.from('entries').update({shared_with_psychologist:!cur}).eq('id',id);
-  if(error){alert('Не удалось изменить: '+error.message);return;}
-  await renderJ();
-  setTimeout(()=>{const c=document.getElementById('ec-'+id);if(c)c.classList.add('open');},50);
-}
 
 async function addNote(eid,section){
   const key=section?eid+'-'+section:eid;
@@ -1622,6 +1819,7 @@ let jKind='kpt';          // какая лента открыта: 'kpt' или 
 let freeCache=[];
 let freeEdit=null;        // открытая в редакторе запись {id, shared, created_at}
 let freeDirty=false, freeTimer=null, freeChain=Promise.resolve();
+let freeReadAt=null;      // психолог: когда последний раз нажал «✓ Прочитано» у этого клиента
 
 function setKind(k,noRender){
   jKind=k;
@@ -1640,6 +1838,12 @@ async function renderFree(){
     .order('created_at',{ascending:false});
   if(error){console.error(error);box.innerHTML='<div class="empty">Не удалось загрузить записи. Проверьте интернет и обновите страницу.</div>';return;}
   freeCache=data||[];
+  freeReadAt=null;
+  if(isViewing()){
+    const r=await sb.from('diary_reads').select('read_at')
+      .eq('psychologist_id',user.id).eq('client_id',viewingClient.id).maybeSingle();
+    freeReadAt=r.data?r.data.read_at:null;
+  }
   renderFreeList();
 }
 
@@ -1654,11 +1858,57 @@ function renderFreeList(){
     return;
   }
   if(!list.length){box.innerHTML='<div class="empty">Ничего не найдено</div>';return;}
+  // психолог (без поиска): сверху непрочитанное сплошным текстом, ниже — прочитанное
+  let top='', rest=list;
+  if(isViewing()&&!q){
+    const fresh=freeUnread(freeCache);
+    if(fresh.length){
+      rest=list.filter(e=>!fresh.includes(e));
+      top=newBlockHtml(fresh)+(rest.length?'<div class="oldhead">Прочитанные ранее</div>':'');
+    }
+  }
   const groups={};
-  list.forEach(e=>{const ds=new Date(e.created_at).toDateString();(groups[ds]=groups[ds]||[]).push(e);});
-  box.innerHTML=Object.keys(groups).map(ds=>
+  rest.forEach(e=>{const ds=new Date(e.created_at).toDateString();(groups[ds]=groups[ds]||[]).push(e);});
+  box.innerHTML=top+Object.keys(groups).map(ds=>
     `<div class="dgroup"><div class="dgroup-lbl">${dayLabel(ds)}</div>${groups[ds].map(buildFreeCard).join('')}</div>`
   ).join('');
+}
+
+// «Новая» = открыта психологу или изменена после его последнего «✓ Прочитано».
+// (открытие записи психологу тоже меняет updated_at — поэтому старая запись, открытая позже, тоже новая)
+function freeUnread(list,readAt){
+  const r=readAt!==undefined?readAt:freeReadAt;
+  return list.filter(e=>(unpackText(e.body)||'').trim() && (!r || new Date(e.updated_at)>new Date(r)));
+}
+
+function newBlockHtml(fresh){
+  const items=fresh.slice().sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));   // от старых к новым
+  const n=items.length;
+  return `<div class="newblk">
+    <div class="newblk-h">Новые записи · ${n}</div>
+    <div class="newblk-s">${freeReadAt?'С вашего прошлого «Прочитано».':'Все записи, которые клиент вам открыл.'} По порядку — от старых к новым.</div>
+    ${items.map(e=>{
+      const d=new Date(e.created_at);
+      const wd=d.toLocaleDateString('ru',{weekday:'long',day:'numeric',month:'long'});
+      const tm=d.toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});
+      return `<div class="newday">${x(wd)} · ${tm}</div><div class="newtxt">${x(unpackText(e.body))}</div>`;
+    }).join('')}
+    <button class="bnxt" onclick="markDiaryRead()">✓ Прочитано</button>
+  </div>`;
+}
+
+async function markDiaryRead(){
+  const fresh=freeUnread(freeCache);
+  if(!fresh.length) return;
+  // отмечаем ровно до последней показанной записи — то, что клиент напишет прямо сейчас, останется новым
+  const last=fresh.reduce((m,e)=>new Date(e.updated_at)>new Date(m)?e.updated_at:m, fresh[0].updated_at);
+  const {error}=await sb.from('diary_reads').upsert({
+    psychologist_id:user.id, client_id:viewingClient.id, read_at:last
+  });
+  if(error){alert('Не удалось отметить: '+error.message);return;}
+  freeReadAt=last;
+  renderFreeList();
+  window.scrollTo({top:0,behavior:'smooth'});
 }
 
 function buildFreeCard(e){
@@ -1667,30 +1917,19 @@ function buildFreeCard(e){
   const preview=text.trim()?x(text):'<span class="free-empty">Пустая запись</span>';
   let acts='';
   if(!isViewing()){
-    const shown=e.shared_with_psychologist;
-    const shareBtn=profile.psychologist_id
-      ? `<button class="shbtn ${shown?'on':'off'}" onclick="toggleFreeShare('${e.id}',${shown});event.stopPropagation()">
-           ${shown?'👁 Видна психологу':'🔒 Только для меня'}</button>` : '';
     acts=`<div class="eacts">
       <button class="abtn" onclick="openFreeEditor('${e.id}');event.stopPropagation()">✏️ Редактировать</button>
-      ${shareBtn}
+      ${shareBtnHtml('free',e)}
       <button class="abtn del" onclick="delFree('${e.id}');event.stopPropagation()">Удалить</button></div>`;
   }
   return `<div class="ecard" id="fc-${e.id}">
     <div class="ehead" onclick="document.getElementById('fc-${e.id}').classList.toggle('open')">
-      <div class="etime">${time}</div>
+      <div class="etime">${time}${visIco('free',e)}</div>
       <div class="epreview"><div class="esit-text">${preview}</div></div>
       <div class="echev">▾</div>
     </div>
     <div class="ebody"><div class="esec"><div class="esval free-full">${preview}</div></div>${acts}</div>
   </div>`;
-}
-
-async function toggleFreeShare(id,cur){
-  const {error}=await sb.from('free_entries').update({shared_with_psychologist:!cur}).eq('id',id);
-  if(error){alert('Не удалось изменить: '+error.message);return;}
-  await renderFree();
-  const c=document.getElementById('fc-'+id);if(c)c.classList.add('open');
 }
 
 async function delFree(id){
@@ -1724,7 +1963,7 @@ async function openFreeEditor(id){
   await saveFree();                       // сначала дописать предыдущую
   const e=id?freeCache.find(z=>String(z.id)===String(id)):null;
   freeEdit=e?{id:e.id,shared:e.shared_with_psychologist,created_at:e.created_at}
-            :{id:null,shared:false,created_at:null};
+            :{id:null,shared:shareDefault('free'),created_at:null};
   switchTab('write');
   document.getElementById('wChoose').style.display='none';
   document.getElementById('wFree').style.display='block';
@@ -1753,7 +1992,9 @@ async function toggleEditorShare(){
   if(freeEdit.id){
     const {error}=await sb.from('free_entries')
       .update({shared_with_psychologist:freeEdit.shared}).eq('id',freeEdit.id);
-    if(error){freeEdit.shared=!freeEdit.shared;renderFreeShare();alert('Не удалось изменить: '+error.message);}
+    if(error){freeEdit.shared=!freeEdit.shared;renderFreeShare();alert('Не удалось изменить: '+error.message);return;}
+    const c=freeCache.find(z=>String(z.id)===String(freeEdit.id));
+    if(c) c.shared_with_psychologist=freeEdit.shared;
   }
 }
 
@@ -1939,6 +2180,7 @@ async function saveEntry(){
     needs_text:packText(document.getElementById('fNeed').value.trim()),
     constructive:packText(document.getElementById('fCons').value.trim()),
     author:packText(document.getElementById('fAuth').value.trim()),
+    shared_with_psychologist:shareDefault('kpt'),
   };
   const {data:entry,error}=await sb.from('entries').insert(d).select().single();
   btn.disabled=false;btn.textContent='Сохранить ✓';
