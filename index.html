@@ -309,6 +309,14 @@ textarea.free-ta{min-height:320px;font-size:15px;line-height:1.75;resize:vertica
 .newblk .bnxt{margin-top:18px;}
 .oldhead{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-light);margin:4px 0 12px;}
 .cnew{font-size:12px;color:#3a6a4a;margin-top:4px;font-weight:600;}
+.tbadge{display:inline-block;margin-left:6px;font-size:11px;font-weight:700;color:#3a6a4a;}
+.kptnew{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:var(--paper);border:1.5px solid var(--green);border-radius:14px;padding:12px 14px;margin-bottom:16px;font-size:14px;font-weight:600;color:var(--accent);}
+.kptnew button{font-family:'Mulish',sans-serif;font-size:13px;font-weight:600;padding:8px 16px;border-radius:20px;border:none;background:var(--accent);color:#fff;cursor:pointer;}
+.newchip{display:inline-flex;align-items:center;font-size:11px;font-weight:700;line-height:1;padding:4px 9px;margin:0 6px 7px 0;border-radius:12px;background:var(--gs);border:1px solid #b9d3c0;color:#3a6a4a;}
+.abtn.okbtn{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600;}
+.abtn.okbtn:hover{background:var(--aw);color:#fff;}
+.abtn.nobtn{background:#fbe9e9;border-color:#d98a8a;color:#a03a3a;font-weight:600;}
+.abtn.nobtn:hover{background:#f6dada;}
 /* окошко доступа психолога */
 .opt{display:flex;gap:10px;align-items:flex-start;padding:11px 13px;border:1.5px solid var(--as);border-radius:12px;margin-bottom:8px;cursor:pointer;font-size:14px;line-height:1.5;text-transform:none;letter-spacing:0;font-weight:400;color:var(--ink);}
 .opt input{margin-top:3px;flex-shrink:0;width:auto;}
@@ -1454,18 +1462,21 @@ async function renderClients(){
     .select('client_id,label').eq('psychologist_id',user.id);
   const lmap={};(labels||[]).forEach(l=>lmap[l.client_id]=l.label);
 
-  clients=(data||[]).map(c=>({...c,label:lmap[c.id]||'',newCount:0}));
+  clients=(data||[]).map(c=>({...c,label:lmap[c.id]||'',newCount:0,newKpt:0}));
 
-  // сколько новых записей в дневнике у каждого клиента (видны только открытые психологу)
+  // сколько новых записей (КПТ и дневник) у каждого клиента — видны только открытые психологу
   const ids=clients.filter(c=>c.psychologist_status==='active').map(c=>c.id);
   if(ids.length){
-    const [fe,rd]=await Promise.all([
+    const [fe,ke,rd]=await Promise.all([
       sb.from('free_entries').select('user_id,body,updated_at').in('user_id',ids),
-      sb.from('diary_reads').select('client_id,read_at').eq('psychologist_id',user.id)
+      sb.from('entries').select('user_id,updated_at').in('user_id',ids),
+      sb.from('diary_reads').select('client_id,read_at,kpt_read_at').eq('psychologist_id',user.id)
     ]);
-    const rmap={};(rd.data||[]).forEach(r=>rmap[r.client_id]=r.read_at);
+    const rmap={};(rd.data||[]).forEach(r=>rmap[r.client_id]=r);
     clients.forEach(c=>{
-      c.newCount=freeUnread((fe.data||[]).filter(e=>e.user_id===c.id), rmap[c.id]||null).length;
+      const r=rmap[c.id]||{};
+      c.newCount=freeUnread((fe.data||[]).filter(e=>e.user_id===c.id), r.read_at||null).length;
+      c.newKpt=kptUnread((ke.data||[]).filter(e=>e.user_id===c.id), r.kpt_read_at||null).length;
     });
   }
   clients.sort((a,b)=>(a.psychologist_status==='pending'?0:1)-(b.psychologist_status==='pending'?0:1));
@@ -1539,8 +1550,8 @@ async function renderClients(){
 
     let acts='';
     if(pend){
-      acts=`<button class="abtn" onclick="acceptClient('${c.id}')">Принять</button>
-            <button class="abtn del" onclick="declineClient('${c.id}')">Отклонить</button>`;
+      acts=`<button class="abtn okbtn" onclick="acceptClient('${c.id}')">Принять</button>
+            <button class="abtn nobtn" onclick="declineClient('${c.id}')">Отклонить</button>`;
     } else {
       acts = (locked?'':`<button class="abtn" onclick="openClient('${c.id}')">Открыть дневник</button>`)
            + (showChoose?`<button class="abtn" onclick="setKept('${c.id}')">Оставить этого</button>`:'')
@@ -1548,7 +1559,10 @@ async function renderClients(){
     }
     return `<div class="ccard ${pend?'pending':''} ${locked?'locked':''}">
       <div class="cinfo">${name}<div class="cmail">${x(c.email)}</div>
-        ${!locked&&c.newCount?`<div class="cnew">🟢 ${c.newCount} ${plural(c.newCount,'новая запись','новые записи','новых записей')} в дневнике</div>`:''}
+        ${!locked&&(c.newCount||c.newKpt)?`<div class="cnew">🟢 Новое: ${[
+          c.newKpt?c.newKpt+' '+plural(c.newKpt,'запись','записи','записей')+' КПТ':'',
+          c.newCount?c.newCount+' '+plural(c.newCount,'запись','записи','записей')+' в дневнике':''
+        ].filter(Boolean).join(' · ')}</div>`:''}
         ${locked?'<div class="clocked">Записи сохранены, доступ вернётся после оплаты</div>':''}</div>
       ${pend?'<span class="cstatus">заявка</span>':''}
       ${isKept?`<span class="ckept">${fullAccess?'останется':'доступен'}</span>`:''}
@@ -1642,7 +1656,9 @@ async function saveLabel(){
 
 function openClient(id){
   viewingClient=clients.find(c=>c.id===id)||null;
-  if(viewingClient&&viewingClient.newCount) setKind('free',true);   // есть новое в дневнике — сразу туда
+  // сразу туда, где есть новое: сначала дневник, потом КПТ
+  if(viewingClient&&viewingClient.newCount) setKind('free',true);
+  else if(viewingClient&&viewingClient.newKpt) setKind('kpt',true);
   updateBadge();
   switchTab('journal');
 }
@@ -1672,12 +1688,41 @@ function dayLabel(ds){
     : new Date(ds).toLocaleDateString('ru',{day:'numeric',month:'long',year:'numeric'});
 }
 
+let kptReadAt=null;   // психолог: когда последний раз нажал «✓ Прочитано» у записей КПТ этого клиента
+
 async function renderJ(){
+  updateKindTabs();
   if(jKind==='free') return renderFree();
   const box=document.getElementById('jList');
   box.innerHTML='<div class="gloading">Загрузка записей</div>';
   entriesCache=await loadEntries();
+  kptReadAt=null;
+  if(isViewing()){
+    const r=await sb.from('diary_reads').select('kpt_read_at')
+      .eq('psychologist_id',user.id).eq('client_id',viewingClient.id).maybeSingle();
+    kptReadAt=r.data?r.data.kpt_read_at:null;
+  }
   drawKpt();
+}
+
+// «Новая» запись КПТ = открыта психологу или изменена после его последнего «✓ Прочитано»
+function kptUnread(list,readAt){
+  return list.filter(e=>!readAt || new Date(e.updated_at)>new Date(readAt));
+}
+
+async function markKptRead(){
+  const fresh=kptUnread(entriesCache,kptReadAt);
+  if(!fresh.length) return;
+  const last=fresh.reduce((m,e)=>new Date(e.updated_at)>new Date(m)?e.updated_at:m, fresh[0].updated_at);
+  const {error}=await sb.from('diary_reads').upsert({
+    psychologist_id:user.id, client_id:viewingClient.id, kpt_read_at:last
+  });
+  if(error){alert('Не удалось отметить: '+dbErr(error));return;}
+  kptReadAt=last;
+  viewingClient.newKpt=0;
+  updateKindTabs();
+  drawKpt();
+  window.scrollTo({top:0,behavior:'smooth'});
 }
 
 function drawKpt(){
@@ -1698,7 +1743,12 @@ function drawKpt(){
     html+=`<div class="dgroup"><div class="dgroup-lbl">${dayLabel(ds)}</div>`+
           groups[ds].map(buildCard).join('')+`</div>`;
   }
-  box.innerHTML=introHtml()+html+expLink();
+  let top='';
+  if(isViewing()){
+    const n=kptUnread(entries,kptReadAt).length;
+    if(n) top=`<div class="kptnew"><span>🆕 Новых записей КПТ: ${n}</span><button onclick="markKptRead()">✓ Прочитано</button></div>`;
+  }
+  box.innerHTML=introHtml()+top+html+expLink();
 }
 
 function buildCard(e){
@@ -1707,7 +1757,7 @@ function buildCard(e){
   const general=allNotes.filter(n=>!n.section);
   // «💬 Комментарий психолога» над текстом — если психолог что-то написал к записи
   const psyN=allNotes.filter(n=>n.author_id!==e.user_id).length;
-  const nchip=psyN?`<div><span class="nchip">💬 ${psyN===1?'Комментарий психолога':psyN+' '+plural(psyN,'комментарий','комментария','комментариев')+' психолога'}</span></div>`:'';
+  const nchip=psyN?`<div style="display:inline"><span class="nchip">💬 ${psyN===1?'Комментарий психолога':psyN+' '+plural(psyN,'комментарий','комментария','комментариев')+' психолога'}</span></div>`:'';
 
   const emotions=e.emotions||[], distortions=e.distortions||[], needs=e.needs||[];
   const tags=emotions.slice(0,4).map(em=>`<span class="etag ${em.cat||''}">${x(em.name)}</span>`).join('');
@@ -1780,7 +1830,7 @@ function buildCard(e){
     <div class="ehead" onclick="togCard('${e.id}')">
       <div class="etime">${time}</div>
       <div class="epreview">
-        ${nchip}
+        ${isViewing()&&kptUnread([e],kptReadAt).length?'<span class="newchip">🆕 Новая</span>':''}${nchip}
         <div class="esit-text">${x(unpackText(e.situation)||'Без описания')}</div>
         <div class="etags">${tags}</div>
         ${visTxt('kpt',e)}
@@ -2058,8 +2108,17 @@ let freeEdit=null;        // открытая в редакторе запись
 let freeDirty=false, freeTimer=null, freeChain=Promise.resolve();
 let freeReadAt=null;      // психолог: когда последний раз нажал «✓ Прочитано» у этого клиента
 
+// У психолога на переключателе видно, где новое: «КПТ 🟢1 | Дневник 🟢3»
+function updateKindTabs(){
+  const v=isViewing()&&viewingClient;
+  const b=n=>n?`<span class="tbadge">🟢 ${n}</span>`:'';
+  document.getElementById('kt-kpt').innerHTML='КПТ'+(v?b(viewingClient.newKpt):'');
+  document.getElementById('kt-free').innerHTML='Дневник'+(v?b(viewingClient.newCount):'');
+}
+
 function setKind(k,noRender){
   jKind=k;
+  updateKindTabs();
   document.getElementById('kt-kpt').classList.toggle('act',k==='kpt');
   document.getElementById('kt-free').classList.toggle('act',k==='free');
   document.getElementById('fSearchWrap').style.display=k==='free'?'block':'none';
@@ -2144,6 +2203,8 @@ async function markDiaryRead(){
   });
   if(error){alert('Не удалось отметить: '+dbErr(error));return;}
   freeReadAt=last;
+  viewingClient.newCount=0;
+  updateKindTabs();
   renderFreeList();
   window.scrollTo({top:0,behavior:'smooth'});
 }
