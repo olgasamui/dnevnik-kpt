@@ -314,6 +314,9 @@ textarea.free-ta{min-height:320px;font-size:15px;line-height:1.75;resize:vertica
 .kshare-h{font-size:12px;color:var(--ink-light);margin-top:8px;}
 .tbadge{display:inline-block;margin-left:6px;font-size:11px;font-weight:700;color:#3a6a4a;}
 .kptnew{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:var(--paper);border:1.5px solid var(--green);border-radius:14px;padding:12px 14px;margin-bottom:16px;font-size:14px;font-weight:600;color:var(--accent);}
+.kptnew-h{font-size:12px;font-weight:500;color:var(--ink-light);}
+.kptread{background:var(--paper);border:1.5px solid var(--green);border-radius:14px;padding:12px 14px 14px;margin:4px 0 16px;}
+.kptread .bnxt{margin-top:8px;}
 .kptnew button{font-family:'Mulish',sans-serif;font-size:13px;font-weight:600;padding:8px 16px;border-radius:20px;border:none;background:var(--accent);color:#fff;cursor:pointer;}
 .newchip{display:inline-flex;align-items:center;font-size:11px;font-weight:700;line-height:1;padding:4px 9px;margin:0 6px 7px 0;border-radius:12px;background:var(--gs);border:1px solid #b9d3c0;color:#3a6a4a;}
 .abtn.okbtn{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600;}
@@ -1742,15 +1745,20 @@ function drawKpt(){
     const ds=new Date(e.created_at).toDateString();
     (groups[ds]=groups[ds]||[]).push(e);
   });
+  // у психолога: «✓ Прочитано» сразу под последней новой записью (новые — самые свежие, идут сверху)
+  const fresh=isViewing()?kptUnread(entries,kptReadAt):[];
+  const lastFreshId=fresh.length?fresh[fresh.length-1].id:null;
+  const readBtn=`<div class="kptread"><div class="kptnew-h">Прочитали новые записи выше?</div>
+    <button class="bnxt" onclick="markKptRead()">✓ Прочитано</button></div>`;
   let html='';
   for(const ds of Object.keys(groups)){
     html+=`<div class="dgroup"><div class="dgroup-lbl">${dayLabel(ds)}</div>`+
-          groups[ds].map(buildCard).join('')+`</div>`;
+          groups[ds].map(e=>buildCard(e)+(e.id===lastFreshId?readBtn:'')).join('')+`</div>`;
   }
   let top='';
   if(isViewing()){
     const n=kptUnread(entries,kptReadAt).length;
-    if(n) top=`<div class="kptnew"><span>🆕 Новых записей КПТ: ${n}</span><button onclick="markKptRead()">✓ Прочитано</button></div>`;
+    if(n) top=`<div class="kptnew"><span>🆕 Новых записей КПТ: ${n}</span><span class="kptnew-h">Прочитайте их — кнопка «✓ Прочитано» внизу, после новых записей</span></div>`;
   }
   box.innerHTML=introHtml()+top+html+expLink();
 }
