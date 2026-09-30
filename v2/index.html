@@ -246,7 +246,7 @@ input::placeholder,textarea::placeholder{color:var(--ink-light);}
 /* КЛИЕНТЫ ПСИХОЛОГА */
 .ccard{background:var(--paper);border:1px solid var(--as);border-radius:14px;padding:15px 16px;margin-bottom:10px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
 .ccard.pending{border-color:var(--nyb);background:#fffdf5;}
-.cinfo{flex:1;min-width:0;}
+.cinfo{flex:1 1 180px;min-width:0;}
 .clabel{font-size:15px;font-weight:600;color:var(--ink);margin-bottom:2px;}
 .clabel.empty-label{color:var(--ink-light);font-weight:400;font-style:italic;}
 .namelink{color:var(--accent);font-weight:600;cursor:pointer;border-bottom:1.5px dashed var(--aw);}
@@ -321,6 +321,15 @@ textarea.free-ta{min-height:320px;font-size:15px;line-height:1.75;resize:vertica
 .free-empty{color:var(--ink-light);font-style:italic;}
 
 /* СКАЧАТЬ МОИ ЗАПИСИ — страница для сохранения в PDF */
+.pendhint{font-size:12.5px;line-height:1.6;color:#6a5a1a;background:#fbf6e2;border:1px solid #efe2a8;border-radius:10px;padding:9px 12px;margin-top:8px;}
+/* приветственная плашка */
+.intro{background:var(--paper);border:1.5px solid var(--green);border-radius:16px;padding:18px 18px 16px;margin-bottom:18px;}
+.intro h3{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:22px;color:var(--accent);margin:0 0 6px;}
+.intro p{font-size:14px;line-height:1.65;color:var(--ink);margin:0 0 8px;}
+.intro ul{margin:4px 0 12px;padding-left:18px;}
+.intro li{font-size:14px;line-height:1.65;color:var(--ink);margin-bottom:6px;}
+.intro .bnxt{margin-top:4px;}
+.intro-link{font-size:13px;color:var(--aw);cursor:pointer;text-decoration:underline;}
 .exp-link{text-align:center;margin:18px 0 6px;}
 .exp-link span{font-size:13px;color:var(--aw);cursor:pointer;text-decoration:underline;}
 #exportView{display:none;position:fixed;inset:0;z-index:700;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;}
@@ -434,7 +443,8 @@ textarea.free-ta{min-height:320px;font-size:15px;line-height:1.75;resize:vertica
 <!-- ДОСТУП ПСИХОЛОГА К ЗАПИСЯМ -->
 <div class="overlay" id="mShare">
 <div class="modal">
-  <div class="mtitle">Что увидит психолог</div>
+  <div class="mtitle">Что будет видно вашему психологу</div>
+  <div id="shPend"></div>
   <div class="msub">Психолог видит только те записи, которые вы ему открываете. Любую запись потом можно открыть или скрыть — нажатием на «👁 Видна психологу» / «🔒 Только для меня» на карточке.</div>
   <div id="shOld">
     <div class="sect-head" id="shOldHead">Записи, которые у вас уже есть</div>
@@ -452,6 +462,14 @@ textarea.free-ta{min-height:320px;font-size:15px;line-height:1.75;resize:vertica
   <p style="font-size:12px;color:var(--ink-light);margin-top:4px;line-height:1.6;">Это можно поменять в «Настройках».</p>
   <div class="ferr" id="shErr"></div>
   <div class="brow"><button class="btn bp" id="shBtn" onclick="saveShareChoice()">Сохранить</button></div>
+</div>
+</div>
+
+<!-- КАК ПОЛЬЗОВАТЬСЯ ДНЕВНИКОМ -->
+<div class="overlay" id="mIntro">
+<div class="modal">
+  <button class="mclose" onclick="cm('mIntro')">✕</button>
+  <div id="introBody"></div>
 </div>
 </div>
 
@@ -1221,6 +1239,8 @@ async function openSettings(){
       <div class="fok" id="chOk"></div>
       <div class="brow"><button class="btn bs" onclick="changePassword()">Сохранить новый пароль</button></div>
 
+      <p style="margin-top:14px;"><span class="intro-link" onclick="cm('mSettings');openIntro()">❔ Как пользоваться дневником</span></p>
+
       <div class="sect-head">Мои записи</div>
       <p style="font-size:12px;color:var(--ink-light);margin:-4px 0 10px;line-height:1.6;">Ваши записи принадлежат вам. Скачать их можно в любой момент — красивым файлом PDF.</p>
       <div class="brow"><button class="btn bs" onclick="cm('mSettings');openExport()">📥 Скачать мои записи</button></div>
@@ -1245,9 +1265,10 @@ async function openSettings(){
   if(profile.psychologist_id){
     const st=profile.psychologist_status==='active'
       ? '<span style="color:var(--green)">подключён</span>'
-      : '<span style="color:var(--nyb)">заявка отправлена, ждём подтверждения</span>';
+      : '<span style="color:var(--nyb)">⏳ заявка отправлена, ждём подтверждения психолога</span>';
     h+=`<div class="sect-head">${myHead}</div>
         <p style="font-size:13px;color:var(--ink-soft);line-height:1.7;">Статус: ${st}</p>
+        ${profile.psychologist_status==='active'?'':pendHint()}
         <label style="margin-top:14px;">Новые записи</label>
         <div class="setrow">
           <button class="${shareDefault('free')?'shbtn on':'abtn'}" onclick="setShareDefault(true)">👁 Видны психологу</button>
@@ -1265,6 +1286,9 @@ async function openSettings(){
         <p style="font-size:12px;color:var(--ink-light);margin:-4px 0 10px;line-height:1.6;">${myHint}</p>
         <label>Код вашего психолога</label>
         <input type="text" id="psyCode" placeholder="например ABC123" style="text-transform:uppercase;">
+        <label style="margin-top:12px;">Как вас представить психологу?</label>
+        <input type="text" id="psyIntro" maxlength="60" placeholder="например: Маша, консультации по средам" value="${x(profile.display_name||'')}">
+        <p style="font-size:12px;color:var(--ink-light);margin-top:6px;line-height:1.6;">Так психолог поймёт, от кого заявка.</p>
         <div class="ferr" id="setErr"></div>
         <div class="brow"><button class="btn bp" onclick="linkPsy()">Подключить</button></div>`;
   }
@@ -1287,10 +1311,20 @@ async function changePassword(){
   ok.classList.add('show');
 }
 
+// Подсказка, пока психолог не подтвердил заявку
+function pendHint(){
+  return `<div class="pendhint">Чтобы психолог точно вас узнал, напишите ему, что отправили заявку с почты <b>${x(user.email)}</b>.</div>`;
+}
+
 async function linkPsy(){
   const code=document.getElementById('psyCode').value.trim().toUpperCase();
+  const intro=document.getElementById('psyIntro').value.trim();
   const err=document.getElementById('setErr');
   if(!code){err.textContent='Введите код';err.classList.add('show');return;}
+  if(!intro){err.textContent='Напишите, как вас представить психологу — например: Маша, консультации по средам';err.classList.add('show');return;}
+  // имя для заявки — в поле профиля display_name (его психолог видит в заявке)
+  const u=await sb.from('profiles').update({display_name:intro}).eq('id',user.id);
+  if(u.error){err.textContent=dbErr(u.error);err.classList.add('show');return;}
   const {error}=await sb.rpc('link_psychologist',{p_code:code});
   if(error){err.textContent=dbErr(error);err.classList.add('show');return;}
   await loadProfile();
@@ -1312,6 +1346,8 @@ async function setShareDefault(v){
 let shItems=[];
 async function openShareDialog(withOld){
   shItems=[];
+  document.getElementById('shPend').innerHTML=profile.psychologist_status==='pending'
+    ? `<div class="pendhint" style="margin:0 0 12px;"><b>⏳ Заявка отправлена</b>, ждём подтверждения психолога.<br>Чтобы психолог точно вас узнал, напишите ему, что отправили заявку с почты <b>${x(user.email)}</b>.</div>`:'';
   document.getElementById('shErr').classList.remove('show');
   document.querySelectorAll('#mShare input[type=radio]').forEach(r=>r.checked=false);
   const v=profile.share_new_by_default;
@@ -1405,7 +1441,7 @@ async function renderClients(){
   await loadProfile();
 
   const {data,error}=await sb.from('profiles')
-    .select('id,email,psychologist_status,created_at')
+    .select('id,email,display_name,psychologist_status,created_at')
     .eq('psychologist_id',user.id);
   if(error){el.innerHTML='<div class="empty">Ошибка загрузки</div>';return;}
 
@@ -1490,7 +1526,7 @@ async function renderClients(){
   el.innerHTML=clients.map(c=>{
     const pend=c.psychologist_status==='pending';
     const name=pend
-      ? ''
+      ? (c.display_name?`<div class="clabel">${x(c.display_name)}</div>`:'')
       : c.label
         ? `<div class="clabel">${x(c.label)}<span class="nedit" title="Переименовать" onclick="openName('${c.id}')">✏️</span></div>`
         : `<div class="clabel"><span class="namelink" onclick="openName('${c.id}')">✏️ Назовите клиента</span></div>`;
@@ -1541,7 +1577,7 @@ function openName(id){
   nameClientId=id;
   const c=clients.find(z=>z.id===id);
   document.getElementById('nameMail').textContent=c?c.email:'';
-  document.getElementById('nameInput').value=c?c.label:'';
+  document.getElementById('nameInput').value=c?(c.label||c.display_name||''):'';   // по умолчанию — как клиент представился
   document.getElementById('nameErr').classList.remove('show');
   document.getElementById('mName').classList.add('open');
   setTimeout(()=>document.getElementById('nameInput').focus(),100);
@@ -1646,7 +1682,7 @@ function drawKpt(){
   const box=document.getElementById('jList');
   const entries=entriesCache;
   if(!entries.length){
-    box.innerHTML=`<div class="empty"><span class="empty-big">✦</span>${
+    box.innerHTML=introHtml()+`<div class="empty"><span class="empty-big">✦</span>${
       isViewing()?'У клиента пока нет открытых записей.':'Записей пока нет.<br>Нажмите «+ Новая запись»'}</div>`;
     return;
   }
@@ -1660,7 +1696,7 @@ function drawKpt(){
     html+=`<div class="dgroup"><div class="dgroup-lbl">${dayLabel(ds)}</div>`+
           groups[ds].map(buildCard).join('')+`</div>`;
   }
-  box.innerHTML=html+expLink();
+  box.innerHTML=introHtml()+html+expLink();
 }
 
 function buildCard(e){
@@ -1807,6 +1843,58 @@ function redrawList(){
 function shareDefault(kind){
   const v=profile&&profile.share_new_by_default;
   return (v===true||v===false)?v:(kind==='kpt');
+}
+
+// ============================================================
+//  ПРИВЕТСТВИЕ: плашка вверху своей ленты, пока не нажали «Понятно».
+//  1 — пришли из Дневника 1 (в user_metadata метка from_v1, ставится при переезде),
+//  2 — новые пользователи, 3 — психологи. Что прочитано — profiles.intro_seen.
+// ============================================================
+const INTRO_PSY_LINK=`<li><b>Если вы работаете с психологом</b>, его можно подключить: попросите у психолога код и введите его в «Настройках». При подключении вы сами выберете, какие из уже сделанных записей открыть психологу и будут ли новые записи сразу видны ему.</li>
+  <li><b>Вы решаете, что видит психолог.</b> У каждой записи есть кнопка «👁 Видна психологу / 🔒 Только для меня». Часть записей можно открыть психологу, а часть оставить только для себя.</li>
+  <li><b>Свои записи можно скачать</b> в PDF: «Настройки» → «Мои записи».</li>`;
+const INTRO={
+  old:`<h3>Добро пожаловать в обновлённый КПТ-дневник 🌿</h3>
+  <p>Ваши записи на месте, входите с той же почтой и паролем. Сейчас все старые записи видны только вам.</p>
+  <p><b>Что нового:</b></p><ul>
+  <li><b>Дневник.</b> Кроме записей КПТ теперь можно вести обычный дневник: просто писать, что происходило за день. «+ Новая запись» → «Запись в дневник».</li>
+  ${INTRO_PSY_LINK}</ul>`,
+  new:`<h3>Добро пожаловать в КПТ-дневник 🌿</h3>
+  <p>Вот как здесь всё устроено:</p><ul>
+  <li><b>Запись КПТ</b>: разбор ситуации по шагам. Что случилось, что вы почувствовали и подумали, что было в теле, какие потребности, как можно поступить по-другому. На каждом шаге есть подсказки.</li>
+  <li><b>Дневник</b>: обычные записи о том, что происходило за день, мысли, наблюдения. «+ Новая запись» → «Запись в дневник».</li>
+  <li><b>Всё, что вы пишете, видно только вам.</b></li>
+  ${INTRO_PSY_LINK}</ul>`,
+  psy:`<h3>Добро пожаловать в кабинет психолога 🌿</h3>
+  <p>Вот как здесь всё устроено:</p><ul>
+  <li><b>Как подключить клиента.</b> Ваш код лежит в «Настройках». Передайте его клиенту, он введёт код у себя, и во вкладке «Клиенты» появится заявка. Нажмите «Принять» и подпишите клиента так, как вам удобно. Клиент не видит, как он у вас записан.</li>
+  <li><b>Что вы видите.</b> Клиент сам решает, какие записи вам открыть. Вы видите только те, что он открыл.</li>
+  <li><b>Новые записи.</b> В списке клиентов отмечено «🟢 N новых записей в дневнике». Откройте дневник клиента: новые записи будут сверху, одним текстом, от старых к новым. Прочитали — нажмите «✓ Прочитано», и в следующий раз там будут только свежие.</li>
+  <li><b>Записи КПТ</b> открываются карточками. К каждому разделу можно оставить комментарий («💬 ответить») или написать общий комментарий ко всей записи. Клиент видит ваши комментарии.</li>
+  <li><b>Ваш личный дневник</b> во вкладке «Мои записи». Клиенты его не видят.</li></ul>`
+};
+function introKind(){
+  if(isPsy()) return 'psy';
+  return (user.user_metadata&&user.user_metadata.from_v1)?'old':'new';
+}
+function introHtml(){
+  if(isViewing()||!profile) return '';
+  const seen=profile.intro_seen;
+  if(isPsy()?seen==='psy':(seen==='client'||seen==='psy')) return '';
+  return `<div class="intro" id="introCard">${INTRO[introKind()]}
+    <button class="bnxt" onclick="introDone()">Понятно</button></div>`;
+}
+async function introDone(){
+  const v=isPsy()?'psy':'client';
+  const c=document.getElementById('introCard');if(c)c.remove();
+  profile.intro_seen=v;
+  const {error}=await sb.from('profiles').update({intro_seen:v}).eq('id',user.id);
+  if(error) console.error(error);   // не страшно: плашка просто покажется ещё раз
+}
+function openIntro(){
+  document.getElementById('introBody').innerHTML=`<div class="intro" style="border:none;padding:0;margin:0;">${INTRO[introKind()]}</div>
+    <div class="brow"><button class="btn bp" onclick="cm('mIntro')">Понятно</button></div>`;
+  document.getElementById('mIntro').classList.add('open');
 }
 
 // ============================================================
@@ -2011,7 +2099,7 @@ function renderFreeList(){
   const q=document.getElementById('fSearch').value.trim().toLowerCase();
   const list=q ? freeCache.filter(e=>(unpackText(e.body)||'').toLowerCase().includes(q)) : freeCache;
   if(!freeCache.length){
-    box.innerHTML=`<div class="empty"><span class="empty-big">✦</span>${
+    box.innerHTML=introHtml()+`<div class="empty"><span class="empty-big">✦</span>${
       isViewing()?'Клиент пока не открыл вам записи дневника.'
       :'В дневнике пока нет записей.<br>Нажмите «+ Новая запись» → «Запись в дневник».'}</div>`;
     return;
@@ -2028,7 +2116,7 @@ function renderFreeList(){
   }
   const groups={};
   rest.forEach(e=>{const ds=new Date(e.created_at).toDateString();(groups[ds]=groups[ds]||[]).push(e);});
-  box.innerHTML=top+Object.keys(groups).map(ds=>
+  box.innerHTML=(q?'':introHtml())+top+Object.keys(groups).map(ds=>
     `<div class="dgroup"><div class="dgroup-lbl">${dayLabel(ds)}</div>${groups[ds].map(buildFreeCard).join('')}</div>`
   ).join('')+(q?'':expLink());
 }
