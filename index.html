@@ -1078,9 +1078,30 @@ async function sendResetLink(){
   const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});
   btn.disabled=false;btn.textContent=AUTH_BTN.forgot;
   if(error){showAuthErr(authErrText(error));return;}
-  showAuthOk('✓ Если аккаунт с адресом '+email+' есть, мы отправили на него письмо. '+
-    'Откройте письмо и нажмите на ссылку — откроется страница, где можно задать новый пароль. '+
-    'Если письма нет несколько минут, загляните в «Спам».');
+  showResetInfo(email);
+}
+
+// Подсказка после «Отправить ссылку». Одинаковая, есть такая почта в базе или нет:
+// сайт не сообщает, кто зарегистрирован, — это видно только по письму в своём ящике.
+function showResetInfo(email){
+  clearAuthMsg();
+  const e=document.getElementById('authOk');
+  e.textContent='';
+  const p1=document.createElement('div');
+  p1.append('Письмо со ссылкой отправлено на ');
+  const b=document.createElement('b');b.textContent=email;p1.append(b);
+  p1.append(', но только если с этой почтой вы регистрировались на сайте.');
+  const p2=document.createElement('div');p2.style.marginTop='6px';
+  p2.append('Письма нет через 5 минут? Проверьте «Спам». Если и там нет — скорее всего, '+
+    'вы регистрировались с другой почтой: попробуйте ввести её. Не получается — ');
+  const a=document.createElement('a');
+  a.href='https://t.me/'+ADMIN_TG;a.target='_blank';a.rel='noopener';a.style.color='inherit';
+  a.textContent='в Телеграм';
+  const m=document.createElement('a');
+  m.href='mailto:'+ADMIN_MAIL;m.style.color='inherit';m.textContent=ADMIN_MAIL;
+  p2.append('напишите администратору ',a,' или на почту ',m,'.');
+  e.append(p1,p2);
+  e.classList.add('show');
 }
 
 function showNewPass(){
