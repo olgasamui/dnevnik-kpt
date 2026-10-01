@@ -1096,8 +1096,10 @@ function showResetInfo(email){
     'вы регистрировались с другой почтой: попробуйте ввести её. Не получается — ');
   const a=document.createElement('a');
   a.href='https://t.me/'+ADMIN_TG;a.target='_blank';a.rel='noopener';a.style.color='inherit';
-  a.textContent='напишите администратору в Телеграм';
-  p2.append(a,'.');
+  a.textContent='в Телеграм';
+  const m=document.createElement('a');
+  m.href='mailto:'+ADMIN_MAIL;m.style.color='inherit';m.textContent=ADMIN_MAIL;
+  p2.append('напишите администратору ',a,' или на почту ',m,'.');
   e.append(p1,p2);
   e.classList.add('show');
 }
